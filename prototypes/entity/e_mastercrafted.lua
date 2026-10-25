@@ -185,23 +185,51 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_h3mc_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 0.475, -0.95 },
-      scale = 0.5,
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_v3mc_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 1.0, -0.25 },
-      scale = 0.5,
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3mc_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3mc_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3mc_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3mc_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+        },
+      },
     },
     smoke = {
       {
@@ -301,25 +329,55 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_h3gr_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 0.475, -0.95 },
-      scale = 0.5,
-      animation_speed = 0.75,
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_v3gr_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 1.0, -0.25 },
-      scale = 0.5,
-      animation_speed = 0.75,
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3gr_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+          animation_speed = 0.75,
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3gr_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+          animation_speed = 0.75,
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3gr_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+          animation_speed = 0.75,
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3gr_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+          animation_speed = 0.75,
+        },
+      },
     },
     smoke = {
       {
