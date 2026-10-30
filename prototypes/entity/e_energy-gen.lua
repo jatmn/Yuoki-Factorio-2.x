@@ -147,23 +147,51 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_v3_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 0.475, -0.95 },
-      scale = 0.5,
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/steam_turb_h3_sheet.png",
-      width = 320,
-      height = 320,
-      frame_count = 10,
-      line_length = 5,
-      shift = { 1.0, -0.25 },
-      scale = 0.5,
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_h3_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 1.0, -0.25 },
+          scale = 0.5,
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/steam_turb_v3_sheet.png",
+          width = 320,
+          height = 320,
+          frame_count = 10,
+          line_length = 5,
+          shift = { 0.475, -0.95 },
+          scale = 0.5,
+        },
+      },
     },
     smoke = {
       {
@@ -224,21 +252,47 @@ data:extend({
       --usage_priority = "secondary-output"
       usage_priority = "primary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/rens_ah.png",
-      width = 120,
-      height = 96,
-      frame_count = 18,
-      line_length = 9,
-      shift = { 0.0, 0.0 },
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/rens_av.png",
-      width = 96,
-      height = 128,
-      frame_count = 18,
-      line_length = 18,
-      shift = { 0.0, 0.0 },
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/rens_av.png",
+          width = 96,
+          height = 128,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/rens_ah.png",
+          width = 120,
+          height = 96,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.0, 0.0 },
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/rens_av.png",
+          width = 96,
+          height = 128,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/rens_ah.png",
+          width = 120,
+          height = 96,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.0, 0.0 },
+        },
+      },
     },
     pipes_horizontal = {
       filename = "__Yuoki__/graphics/entity/pipes_h96.png",
@@ -291,23 +345,51 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/ss800h_sheet.png",
-      width = 256,
-      height = 256,
-      frame_count = 16,
-      line_length = 4,
-      shift = { 1.0, 0.325 },
-      scale = 0.5,
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/ss800v_sheet.png",
-      width = 256,
-      height = 256,
-      frame_count = 16,
-      line_length = 4,
-      shift = { 0.5, 0.0 },
-      scale = 0.5,
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/ss800v_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.5, 0.0 },
+          scale = 0.5,
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/ss800h_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 1.0, 0.325 },
+          scale = 0.5,
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/ss800v_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.5, 0.0 },
+          scale = 0.5,
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/ss800h_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 1.0, 0.325 },
+          scale = 0.5,
+        },
+      },
     },
   },
   -- MF Consumer
@@ -344,21 +426,47 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/seg-ha-s2.png",
-      width = 80,
-      height = 90,
-      frame_count = 18,
-      line_length = 18,
-      shift = { 0.1, 0.1875 },
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/seg-va-s.png",
-      width = 112,
-      height = 96,
-      frame_count = 18,
-      line_length = 18,
-      shift = { 0.4, 0.25 },
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/seg-va-s.png",
+          width = 112,
+          height = 96,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.4, 0.25 },
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/seg-ha-s2.png",
+          width = 80,
+          height = 90,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.1, 0.1875 },
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/seg-va-s.png",
+          width = 112,
+          height = 96,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.4, 0.25 },
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/seg-ha-s2.png",
+          width = 80,
+          height = 90,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.1, 0.1875 },
+        },
+      },
     },
   },
   -- small electric generator - primary reduced continuance
@@ -394,25 +502,55 @@ data:extend({
       type = "electric",
       usage_priority = "primary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/segn_we_sheet.png",
-      width = 256,
-      height = 256,
-      frame_count = 4,
-      line_length = 4,
-      shift = { 1, 0.125 },
-      scale = 0.5,
-      animation_speed = 0.5,
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/segn_ns_sheet.png",
-      width = 256,
-      height = 256,
-      frame_count = 4,
-      line_length = 4,
-      shift = { 0.5, 0.1875 },
-      scale = 0.5,
-      animation_speed = 0.5,
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/segn_ns_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 4,
+          line_length = 4,
+          shift = { 0.5, 0.1875 },
+          scale = 0.5,
+          animation_speed = 0.5,
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/segn_we_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 4,
+          line_length = 4,
+          shift = { 1, 0.125 },
+          scale = 0.5,
+          animation_speed = 0.5,
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/segn_ns_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 4,
+          line_length = 4,
+          shift = { 0.5, 0.1875 },
+          scale = 0.5,
+          animation_speed = 0.5,
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/segn_we_sheet.png",
+          width = 256,
+          height = 256,
+          frame_count = 4,
+          line_length = 4,
+          shift = { 1, 0.125 },
+          scale = 0.5,
+          animation_speed = 0.5,
+        },
+      },
     },
   },
   -- medium second electric generator
@@ -447,21 +585,47 @@ data:extend({
       type = "electric",
       usage_priority = "secondary-output",
     },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ew_sheet.png",
-      width = 192,
-      height = 192,
-      frame_count = 16,
-      line_length = 4,
-      shift = { 0.46875, 0.34375 },
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ns_sheet.png",
-      width = 192,
-      height = 192,
-      frame_count = 16,
-      line_length = 4,
-      shift = { 0.46875, -0.46875 },
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ns_sheet.png",
+          width = 192,
+          height = 192,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.46875, -0.46875 },
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ew_sheet.png",
+          width = 192,
+          height = 192,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.46875, 0.34375 },
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ns_sheet.png",
+          width = 192,
+          height = 192,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.46875, -0.46875 },
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/meg_219_ew_sheet.png",
+          width = 192,
+          height = 192,
+          frame_count = 16,
+          line_length = 4,
+          shift = { 0.46875, 0.34375 },
+        },
+      },
     },
   },
   -- big electric generator
@@ -494,21 +658,47 @@ data:extend({
     },
     fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
     energy_source = { type = "electric", usage_priority = "secondary-output" },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/beg-hac.png",
-      width = 96,
-      height = 160,
-      frame_count = 18,
-      line_length = 18,
-      shift = { 0.0, 0.0 },
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/beg-vac.png",
-      width = 160,
-      height = 120,
-      frame_count = 18,
-      line_length = 9,
-      shift = { 0.015, 0.0 },
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/beg-vac.png",
+          width = 160,
+          height = 120,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.015, 0.0 },
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/beg-hac.png",
+          width = 96,
+          height = 160,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/beg-vac.png",
+          width = 160,
+          height = 120,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.015, 0.0 },
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/beg-hac.png",
+          width = 96,
+          height = 160,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
     },
   },
   -- huge electric generator
@@ -541,21 +731,47 @@ data:extend({
     },
     fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
     energy_source = { type = "electric", usage_priority = "secondary-output" },
-    horizontal_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/heg-ha.png",
-      width = 100,
-      height = 224,
-      frame_count = 18,
-      line_length = 18,
-      shift = { 0.0, 0.0 },
-    },
-    vertical_animation = {
-      filename = "__Yuoki__/graphics/entity/energy-t2/heg-va.png",
-      width = 224,
-      height = 146,
-      frame_count = 18,
-      line_length = 9,
-      shift = { 0.00, -0.35 },
+    pictures = {
+      north = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/heg-va.png",
+          width = 224,
+          height = 146,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.00, -0.35 },
+        },
+      },
+      east = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/heg-ha.png",
+          width = 100,
+          height = 224,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
+      south = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/heg-va.png",
+          width = 224,
+          height = 146,
+          frame_count = 18,
+          line_length = 9,
+          shift = { 0.00, -0.35 },
+        },
+      },
+      west = {
+        animation = {
+          filename = "__Yuoki__/graphics/entity/energy-t2/heg-ha.png",
+          width = 100,
+          height = 224,
+          frame_count = 18,
+          line_length = 18,
+          shift = { 0.0, 0.0 },
+        },
+      },
     },
   },
 
