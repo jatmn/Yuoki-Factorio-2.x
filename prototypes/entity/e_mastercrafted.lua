@@ -85,18 +85,20 @@ data:extend({
           },
         },
       },
-    },
-    working_visualisations = {
-      animation = {
-        filename = "__Yuoki__/graphics/entity/obninsk-reactor_wns.png",
-        priority = "extra-high",
-        width = 210,
-        height = 180,
-        shift = { 0.6, 0.2 },
-        frame_count = 1,
-        line_length = 1,
+      working_visualisations = {
+        {
+          animation = {
+            filename = "__Yuoki__/graphics/entity/obninsk-reactor_wns.png",
+            priority = "extra-high",
+            width = 210,
+            height = 180,
+            shift = { 0.6, 0.2 },
+            frame_count = 1,
+            line_length = 1,
+          },
+          light = { intensity = 0.7, size = 9.9, shift = { 0.0, 0.0 }, color = { r = 0.7, g = 0.0, b = 0.7 } },
+        },
       },
-      light = { intensity = 0.7, size = 9.9, shift = { 0.0, 0.0 }, color = { r = 0.7, g = 0.0, b = 0.7 } },
     },
     crafting_categories = { "yuoki_mf" },
     crafting_speed = 1,
