@@ -9,6 +9,7 @@ Date: 30. 10. 2026
     - Fixed crashes and item loss when the slag conversion migration runs. Preserve item counts, quality, belt positions, inventory filters and logistic requests; spill excess items beside their owner when the replacement has a smaller stack size.
     - Preserve valid virtual and fluid circuit signals during migration cleanup.
     - Updated the fluid replacement and alternate splitter-filter migration helpers for Factorio 2.1.
+    - Preserve fluid amounts and temperatures when migrating editable pump and pipe filters, including multiple filters on connected storage. Reject incompatible fixed filters before changing fluid contents.
     - Restored quality-based energy usage for seven machines.
     - Restored the high-pressure pump's intended module slot.
     - Enforce the intended minimum input temperatures for ten generators while retaining their fluid-type requirements.

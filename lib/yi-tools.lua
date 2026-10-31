@@ -925,9 +925,10 @@ function yi.lib.migration.global_replace_fluid(old_name, new_name)
     return
   end
 
+  local entities = {}
   for _, surface in pairs(game.surfaces) do
     -- Find everything that can hold fluids
-    local entities = surface.find_entities_filtered({
+    local surface_entities = surface.find_entities_filtered({
       type = {
         "pipe",
         "pipe-to-ground",
@@ -941,25 +942,50 @@ function yi.lib.migration.global_replace_fluid(old_name, new_name)
         "offshore-pump",
       },
     })
+    for _, entity in ipairs(surface_entities) do
+      table.insert(entities, entity)
+    end
+  end
 
-    for _, entity in ipairs(entities) do
-      for i = 1, entity.fluids_count do
-        local segmented = entity.has_fluid_segment(i)
-        local fluid = segmented and entity.get_fluid_segment_fluid(i) or entity.get_fluid(i)
-        if fluid and fluid.name == old_name then
-          local filter = segmented and entity.get_fluid_segment_filter(i) or entity.get_fluid_filter(i)
-          assert(not filter or filter.name == new_name, "Yuoki migration: incompatible fluid filter")
-          local replacement = { name = new_name, amount = fluid.amount, temperature = fluid.temperature }
-          local amount
-          if segmented then
-            amount = entity.set_fluid_segment_fluid(i, replacement)
-          else
-            amount = entity.set_fluid(i, replacement)
+  -- Preflight every local filter before changing contents. Setting the same value
+  -- preserves fluid and returns false for filters fixed by recipes/prototypes.
+  local filters, storages, seen_segments = {}, {}, {}
+  for _, entity in ipairs(entities) do
+    for i = 1, entity.fluids_count do
+      local segmented = entity.has_fluid_segment(i)
+      local fluid = segmented and entity.get_fluid_segment_fluid(i) or entity.get_fluid(i)
+      if fluid and fluid.name == old_name then
+        local filter = entity.get_fluid_filter(i)
+        if filter and filter.name == old_name then
+          assert(entity.set_fluid_filter(i, old_name), "Yuoki migration: incompatible fixed fluid filter")
+          table.insert(filters, { entity = entity, index = i })
+        end
+        local segment = segmented and (entity.surface.index .. ":" .. entity.get_fluid_segment_id(i))
+        if not segment or not seen_segments[segment] then
+          table.insert(storages, { entity = entity, index = i, segmented = segmented, fluid = fluid })
+          if segment then
+            seen_segments[segment] = true
           end
-          assert(amount == fluid.amount, "Yuoki migration: fluid replacement was incomplete")
         end
       end
     end
+  end
+  -- Filter changes can empty, split or join segments. Capture each source once,
+  -- then clear its fluid before changing any filters.
+  for _, storage in ipairs(storages) do
+    local removed = storage.segmented and storage.entity.clear_fluid_segment_fluid(storage.index)
+      or storage.entity.clear_fluid(storage.index)
+    assert(removed and removed.amount == storage.fluid.amount, "Yuoki migration: fluid capture was incomplete")
+  end
+  for _, filter in ipairs(filters) do
+    assert(filter.entity.set_fluid_filter(filter.index, new_name), "Yuoki migration: could not restore fluid filter")
+  end
+  for _, storage in ipairs(storages) do
+    local replacement = { name = new_name, amount = storage.fluid.amount, temperature = storage.fluid.temperature }
+    -- Add instead of overwrite: a remapped segment may now share existing target fluid.
+    local amount = storage.segmented and storage.entity.add_fluid_segment_fluid(storage.index, replacement)
+      or storage.entity.add_fluid(storage.index, replacement)
+    assert(amount == replacement.amount, "Yuoki migration: fluid replacement was incomplete")
   end
   log("Yi Migration: Successfully replaced fluid " .. old_name .. " with " .. new_name)
 end

@@ -157,6 +157,14 @@ configuration; include Recycler with Quality, and Elevated Rails with Space Age.
 The scenario is developer-only and is excluded from the release ZIP. It does
 not replace saved-game upgrade testing or validation of third-party mod packs.
 
+Fluid migration checks include editable pump filters and multiple filters on a
+shared pipe segment, including a neighboring segment already holding the target
+fluid. The helper captures each source segment once, clears its fluid, remaps
+editable filters, then adds the converted contents without overwriting existing
+target fluid. Filters fixed
+by recipes or prototypes must already permit the replacement; incompatible fixed
+filters are rejected before any fluid contents change.
+
 For productivity behavior, copy `tests/factorio/productivity.lua` into a separate
 scenario's `control.lua` and run it with `--test-ticks 601`. Run both setting
 values with the same four official mod configurations. The test asserts module
