@@ -337,7 +337,7 @@ data:extend({
       },
     },
     fluid_boxes_off_when_no_fluid_recipe = true,
-    mmodule_slots = 1,
+    module_slots = 1,
     allowed_effects = { "consumption", "speed", "productivity", "pollution" },
   },
 

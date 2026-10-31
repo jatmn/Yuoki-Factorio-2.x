@@ -136,13 +136,7 @@ data:extend({
       production_type = "input-output",
       filter = "steam",
     },
-    fluid_input = {
-      name = "steam",
-      amount = 0.0,
-      minimum_temperature = 100.0,
-      --{ name = "y-mechanical-force", amount = 0.0, minimum_temperature = 100.0 },
-      --{ name = "y_water_mix", amount = 0.0, minimum_temperature = 100.0 },
-    },
+    minimum_input_temperature = 100.0,
     energy_source = {
       type = "electric",
       usage_priority = "secondary-output",
@@ -246,7 +240,7 @@ data:extend({
       production_type = "input-output",
       filter = "steam",
     },
-    fluid_input = { name = "steam", amount = 0.0, minimum_temperature = 150.0 },
+    minimum_input_temperature = 150.0,
     energy_source = {
       type = "electric",
       --usage_priority = "secondary-output"
@@ -340,7 +334,7 @@ data:extend({
       production_type = "input-output",
       filter = "steam",
     },
-    fluid_input = { name = "steam", amount = 0.0, minimum_temperature = 100.0 },
+    minimum_input_temperature = 100.0,
     energy_source = {
       type = "electric",
       usage_priority = "secondary-output",
@@ -421,7 +415,7 @@ data:extend({
       production_type = "input-output",
       filter = "y-mechanical-force",
     },
-    fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
+    minimum_input_temperature = 70.0,
     energy_source = {
       type = "electric",
       usage_priority = "secondary-output",
@@ -497,7 +491,7 @@ data:extend({
       production_type = "input-output",
       filter = "y-mechanical-force",
     },
-    fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
+    minimum_input_temperature = 70.0,
     energy_source = {
       type = "electric",
       usage_priority = "primary-output",
@@ -580,7 +574,7 @@ data:extend({
       production_type = "input-output",
       filter = "y-mechanical-force",
     },
-    fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 50.0 },
+    minimum_input_temperature = 50.0,
     energy_source = {
       type = "electric",
       usage_priority = "secondary-output",
@@ -656,7 +650,7 @@ data:extend({
       production_type = "input-output",
       filter = "y-mechanical-force",
     },
-    fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
+    minimum_input_temperature = 70.0,
     energy_source = { type = "electric", usage_priority = "secondary-output" },
     pictures = {
       north = {
@@ -729,7 +723,7 @@ data:extend({
       production_type = "input-output",
       filter = "y-mechanical-force",
     },
-    fluid_input = { name = "y-mechanical-force", amount = 0.0, minimum_temperature = 70.0 },
+    minimum_input_temperature = 70.0,
     energy_source = { type = "electric", usage_priority = "secondary-output" },
     pictures = {
       north = {
