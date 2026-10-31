@@ -1,0 +1,8 @@
+{
+  "name": "yuoki-washer-fixture",
+  "version": "1.0.0",
+  "title": "Yuoki washer save regression fixture",
+  "author": "Yuoki contributors",
+  "factorio_version": "2.1",
+  "dependencies": ["Yuoki", "yi_engines"]
+}

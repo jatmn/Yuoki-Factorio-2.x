@@ -2,6 +2,7 @@
 Version: 1.3.1
 Date: 30. 10. 2026
   Fixes:
+    - Restored independent fluid inputs and outputs on both washers so Yuoki Engines acid neutralization can run. Preserve the existing ports, combined fluid capacity and saved contents for single-fluid recipes.
     - Restored Factorio 2.1 graphics for ten generators, including Small Turbine Generator-S, while preserving their directional artwork and behavior.
     - Restored the Industrial Liquid Mixer's missing machine graphics.
     - Restored the mastercrafted Obninsk reactor's working overlay and light.

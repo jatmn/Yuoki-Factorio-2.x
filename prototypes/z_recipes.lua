@@ -253,7 +253,7 @@ data:extend({
     energy_required = 10.00,
     ingredients = {
       { type = "item", name = "y_mox2heated", amount = 1.0 },
-      { type = "fluid", name = "water", amount = 500.0 },
+      { type = "fluid", name = "water", amount = 500.0, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y_mox2fuel", amount = 1.0 },
@@ -298,7 +298,7 @@ data:extend({
     energy_required = 10.00,
     ingredients = {
       { type = "item", name = "y_mox1heated", amount = 1.0 },
-      { type = "fluid", name = "water", amount = 500.0 },
+      { type = "fluid", name = "water", amount = 500.0, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y_mox1fuel", amount = 1.0 },
