@@ -10,6 +10,28 @@ Licenced with the MIT licence--]]
 --Call buffer chest initialisation script
 require("prototypes.buffer-chest")
 
+-- Temperature acceptance moved out of the fluid box in 2.1.22.
+-- Retain the declared 2.1.20 minimum without restoring obsolete fields on newer games.
+local major, minor, patch = mods["base"]:match("^(%d+)%.(%d+)%.(%d+)")
+if major == "2" and minor == "1" and tonumber(patch) < 22 then
+  for _, name in ipairs({
+    "y-steam-turbine",
+    "y-obninsk-turbine",
+    "y-notfall-generator-s2",
+    "y-seg",
+    "y-seg-p",
+    "y-meg-s",
+    "y-beg",
+    "y-heg",
+    "y_steam_turbine_mc",
+    "y_steam_turbine_gr",
+  }) do
+    local generator = data.raw.generator[name]
+    generator.fluid_box.minimum_temperature = generator.minimum_input_temperature
+    generator.minimum_input_temperature = nil
+  end
+end
+
 --Copy Vanilla Mining Drill array
 local mining_drill = table.deepcopy(data.raw["mining-drill"]["electric-mining-drill"])
 
@@ -45,14 +67,6 @@ data.raw.radar.yi_radar.radius_minimap_visualisation_color = radar_visualisation
 data.raw["logistic-container"]["y-rare-chest-log"].logistic_slots_count = 1
 data.raw["logistic-container"]["y-rare-m1bunker-log"].logistic_slots_count = 1
 --]]
-
--- make Yuoki productivity modules obey same rules as vanilla if configured as such.
-
---read productivity module setting and call script if true
-local prod_mod = settings.startup["yuoki-prod-mod-behaviour"].value
-if prod_mod == true then
-  require("prototypes.y_prodmod_as_vanilla")
-end
 
 -- Factorio Space Age updates
 require("prototypes.integration.space-age._all") -- Space Age stuff

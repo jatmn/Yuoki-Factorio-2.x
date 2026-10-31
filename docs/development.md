@@ -118,3 +118,47 @@ dependency mods. These checks do not prove game API compatibility, save
 migration, recipe correctness, graphics or gameplay. Engine validation remains
 local and must use the appropriate Factorio/mod versions for behavioral work.
 The separate [Pullfrog workflow](pullfrog.md) retains its owner-command policy.
+
+## Factorio 2.1.24 regression scenario
+
+`tests/factorio/control.lua` runs the production migration helpers against real
+engine stacks, inventories, filters, logistics, circuits and connected fluids.
+It also checks quality energy multipliers, the pump module slot, and all ten
+generators below and above their minimum input temperatures. Failures produce
+`FAIL` log lines and a failing test result. Run with base + Yuoki, then repeat
+with Quality, Space Age + Quality, and Space Age without Quality.
+
+Build the package above, then use an isolated Factorio write-data directory:
+
+```sh
+# Set these to the installed 2.1.24 executable and its data directory.
+FACTORIO_BIN=/path/to/factorio/bin/x64/factorio
+FACTORIO_DATA=/path/to/factorio/data
+TEST_DIR=$(mktemp -d)
+mkdir -p "$TEST_DIR/mods" "$TEST_DIR/scenarios/yuoki-regression"
+cp build/dist/Yuoki_*.zip "$TEST_DIR/mods/"
+cp tests/factorio/control.lua "$TEST_DIR/scenarios/yuoki-regression/"
+cat > "$TEST_DIR/config.ini" <<EOF
+[path]
+read-data=$FACTORIO_DATA
+write-data=$TEST_DIR
+EOF
+cat > "$TEST_DIR/mods/mod-list.json" <<'EOF'
+{"mods":[{"name":"base","enabled":true},{"name":"Yuoki","enabled":true},
+{"name":"quality","enabled":false},{"name":"space-age","enabled":false},
+{"name":"recycler","enabled":false},{"name":"elevated-rails","enabled":false}]}
+EOF
+"$FACTORIO_BIN" -c "$TEST_DIR/config.ini" --mod-directory "$TEST_DIR/mods" \
+  --test-scenario yuoki-regression --test-ticks 241
+```
+
+Enable the appropriate official mods in `mod-list.json` for each additional
+configuration; include Recycler with Quality, and Elevated Rails with Space Age.
+The scenario is developer-only and is excluded from the release ZIP. It does
+not replace saved-game upgrade testing or validation of third-party mod packs.
+
+The obsolete `yuoki-prod-mod-behaviour` startup setting has been retired: its
+module limitation fields no longer controlled productivity in Factorio 2.1.
+Existing recipe-based productivity permissions are preserved. Replacement
+stacks that exceed the new item's stack size spill the excess next to their
+owner, preserving count and quality rather than silently discarding items.
