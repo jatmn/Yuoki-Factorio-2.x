@@ -3,8 +3,7 @@
 The **Release Please** workflow maintains a **draft release PR** on `main`.
 Continue merging normal changes and adding player-facing entries to
 `changelog.txt` while that PR is open. No release is published until you mark
-the release PR ready and merge it. Merging the workflow setup PR only enables
-this process; it does not publish 1.3.1.
+the release PR ready and merge it.
 
 ## First release: 1.3.1
 
@@ -45,19 +44,7 @@ version) and copy it unchanged into Factorio's mods directory. GitHub's automati
 Factorio **2.1.20 or later in the 2.1 series**, as declared in `info.json`.
 Existing incompatible mods listed there still cannot be enabled alongside Yuoki.
 
-## Permissions and failures
-
-The workflow uses `GITHUB_TOKEN` by default and requests contents, issues and
-pull-request write permissions. Repository **Settings → Actions → General →
-Allow GitHub Actions to create and approve pull requests** must be enabled.
-It is already enabled at setup time.
-
-GitHub suppresses normal PR-triggered CI for PRs created/updated by
-`GITHUB_TOKEN`. To have CI automatically run on each release PR update, supply
-the optional Actions secret **`RELEASE_PLEASE_TOKEN`**, using a fine-grained PAT
-with this repository's Contents, Issues and Pull requests read/write access.
-Without it, a maintainer can close/reopen the release PR to trigger PR checks;
-the publication workflow always validates the package regardless.
+## Release failures and recovery
 
 Build/upload failures leave the release unpublished. Fix transient problems,
 then run **Release Please** manually on **main**, with `retry_tag` set to the
@@ -175,7 +162,6 @@ build development ZIPs without requiring a merged release manifest.
 - [Release Please bootstrap and manifest configuration](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
   and [configuration schema](https://github.com/googleapis/release-please/blob/main/schemas/config.json):
   initial version, bootstrap boundary, draft PR/release settings and JSON updates.
-- [Release Please Action permissions and token behavior](https://github.com/googleapis/release-please-action#other-actions-on-release-please-prs).
 
 ZIP validation checks tracked membership, exact source bytes, required notices,
 CRC and checksum. It does not replace Factorio engine, save or graphics testing
