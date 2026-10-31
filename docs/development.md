@@ -82,7 +82,7 @@ python3 tools/validate_package.py
 ```
 
 Python CI parses every tracked `.py` file with `ast.parse` without importing
-game code, then lints them with Ruff's default correctness rules from `.ruff.toml`
+game code, then lints them with Ruff's correctness rules from `.ruff.toml` (E9 + Pyflakes)
 (syntax errors, undefined names, unused imports/variables; no style rules). Its syntax block in `.github/workflows/python.yml` can also be run
 locally. Routing regressions use real Git histories, including a Lua change
 after 3,500 documentation files, unusual filenames, renames, deletions,
