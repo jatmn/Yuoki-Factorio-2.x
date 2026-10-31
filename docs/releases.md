@@ -68,6 +68,12 @@ draft remains unpublished, so they cannot propose another release using that
 unfinished release's history. Retry never substitutes newer main-branch code.
 A blank manual input resumes normal Release Please operation.
 
+Do not manually publish or edit the release while its workflow is running.
+The workflow rechecks the draft status, tag and exact build commit before
+uploading assets and again before publishing, stopping if they changed.
+These checks do not lock GitHub's release UI or make the check and write atomic;
+workflow concurrency only serializes workflow runs, not manual edits.
+
 ### Abandon an unpublished release with a source defect
 
 If the recorded commit cannot build or validate, a retry cannot repair it.

@@ -114,6 +114,79 @@ class ReleaseTests(unittest.TestCase):
                 if pending:
                     self.assertIn('retry_tag: v1.3.1', result.stdout)
 
+    def workflow_step(self, name):
+        workflow = (Path(__file__).resolve().parents[1] /
+                    '.github/workflows/release-please.yml').read_text()
+        return workflow.split('      - name: ' + name + '\n', 1)[1].split('\n      - ', 1)[0]
+
+    def test_build_does_not_inherit_release_token(self):
+        workflow = (Path(__file__).resolve().parents[1] /
+                    '.github/workflows/release-please.yml').read_text()
+        # Workflow/job env applies to every step; build must not receive secrets.
+        for scope in (workflow.split('    steps:', 1)[0],
+                      self.workflow_step('Build and validate the release')):
+            self.assertNotIn('GH_TOKEN:', scope)
+            self.assertNotIn('secrets.', scope)
+            self.assertNotIn('github.token', scope)
+        for name in ('Require unfinished publication to be resumed first',
+                     'Locate the unpublished release commit',
+                     'Attach the installable mod and publish'):
+            self.assertIn('          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}',
+                          self.workflow_step(name).split('        run:', 1)[0])
+
+    def test_publication_rechecks_remote_state_before_each_write(self):
+        script = textwrap.dedent(self.workflow_step(
+            'Attach the installable mod and publish').split('        run: |\n', 1)[1])
+        sha = 'a' * 40
+        draft = {'isDraft': True, 'tagName': 'v1.3.1', 'targetCommitish': sha}
+        dist = self.root / 'build/dist'
+        dist.mkdir(parents=True)
+        for name in ('Yuoki_1.3.1.zip', 'SHA256SUMS', 'release-notes.md'):
+            (dist / name).touch()
+        calls = self.workspace / 'calls.json'
+        cli = self.workspace / 'gh'
+        cli.write_text(f'#!{sys.executable}\n' + textwrap.dedent('''\
+            import json, os, pathlib, sys
+            log = pathlib.Path(os.environ['CALLS'])
+            calls = json.loads(log.read_text())
+            args = sys.argv[1:]
+            expected = {
+                'view': ['release', 'view', 'v1.3.1', '--json', 'isDraft,targetCommitish,tagName'],
+                'upload': ['release', 'upload', 'v1.3.1', 'build/dist/Yuoki_1.3.1.zip',
+                           'build/dist/SHA256SUMS', '--clobber'],
+                'edit': ['release', 'edit', 'v1.3.1', '--notes-file',
+                         'build/dist/release-notes.md', '--draft=false'],
+            }
+            if len(args) < 2 or args != expected.get(args[1]):
+                sys.exit('Unexpected gh request: ' + repr(args))
+            if args[1] == 'view':
+                state = json.loads(os.environ['STATES'])[calls.count('view')]
+                if isinstance(state, int):
+                    sys.exit(state)
+                print(json.dumps(state))
+            calls.append(args[1])
+            log.write_text(json.dumps(calls))
+            '''))
+        cli.chmod(0o755)
+        cases = [([draft, draft], ['view', 'upload', 'view', 'edit'], 0)]
+        for changed in ({**draft, 'isDraft': False}, {**draft, 'targetCommitish': 'b' * 40},
+                        {**draft, 'tagName': 'v1.3.2'}, 42):
+            cases.append(([changed], [] if changed == 42 else ['view'], 42 if changed == 42 else 1))
+            cases.append(([draft, changed], ['view', 'upload'] + ([] if changed == 42 else ['view']),
+                          42 if changed == 42 else 1))
+        for states, expected_calls, expected_exit in cases:
+            with self.subTest(states=states):
+                calls.write_text('[]')
+                result = subprocess.run(
+                    ['bash', '-e', '-o', 'pipefail', '-c', script], cwd=self.root,
+                    capture_output=True, text=True,
+                    env={**os.environ, 'PATH': str(self.workspace) + os.pathsep + os.environ['PATH'],
+                         'TAG': 'v1.3.1', 'RELEASE_SHA': sha, 'RUNNER_TEMP': str(self.workspace),
+                         'CALLS': str(calls), 'STATES': json.dumps(states)},
+                )
+                self.assertEqual(result.returncode, expected_exit, result.stderr)
+                self.assertEqual(json.loads(calls.read_text()), expected_calls)
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='ReleaseTests')

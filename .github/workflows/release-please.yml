@@ -25,11 +25,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Require unfinished publication to be resumed first
         if: inputs.retry_tag == ''
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           pending=$(gh api "repos/$GH_REPO/releases" --paginate --jq \
             '.[] | select(.draft and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) | .tag_name')
@@ -54,6 +55,7 @@ jobs:
         if: steps.release.outputs.release_created == 'true' || inputs.retry_tag != ''
         id: draft
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           TAG: ${{ inputs.retry_tag || steps.release.outputs.tag_name }}
         run: |
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -82,9 +84,18 @@ jobs:
       - name: Attach the installable mod and publish
         if: steps.draft.outputs.sha != ''
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           TAG: ${{ steps.draft.outputs.tag }}
+          RELEASE_SHA: ${{ steps.draft.outputs.sha }}
         run: |
+          require_unchanged_draft() {
+            gh release view "$TAG" --json isDraft,targetCommitish,tagName > "$RUNNER_TEMP/release.json"
+            jq -e --arg tag "$TAG" --arg sha "$RELEASE_SHA" \
+              '.isDraft == true and .tagName == $tag and .targetCommitish == $sha' "$RUNNER_TEMP/release.json"
+          }
+          require_unchanged_draft
           gh release upload "$TAG" build/dist/*.zip build/dist/SHA256SUMS --clobber
+          require_unchanged_draft
           gh release edit "$TAG" --notes-file build/dist/release-notes.md --draft=false
 
       # Run after publication so the next PR sees the newly published version.
