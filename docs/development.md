@@ -173,13 +173,14 @@ Run with and without Quality; missing/hidden target
 variants must leave the original slag untouched. The mod version need not change
 for Factorio to discover a newly added migration filename.
 
-Fluid migration checks include editable pump filters and multiple filters on a
+Fluid migration checks include empty editable pump/pipe filters and multiple filters on a
 shared pipe segment, including a neighboring segment already holding the target
 fluid. The helper captures each source segment once, clears its fluid, remaps
 editable filters, then adds the converted contents without overwriting existing
-target fluid. Filters fixed
-by recipes or prototypes must already permit the replacement; incompatible fixed
-filters are rejected before any fluid contents change.
+target fluid. Empty editable filters migrate independently of contents; empty
+fixed recipe/prototype filters retain their machine restrictions. Fixed filters
+on storage containing the old fluid must already permit the replacement;
+incompatible fixed filters are rejected before any fluid contents change.
 
 For productivity behavior, copy `tests/factorio/productivity.lua` into a separate
 scenario's `control.lua` and run it with `--test-ticks 601`. Run both setting

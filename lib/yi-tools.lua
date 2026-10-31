@@ -957,12 +957,16 @@ function yi.lib.migration.global_replace_fluid(old_name, new_name)
     for i = 1, entity.fluids_count do
       local segmented = entity.has_fluid_segment(i)
       local fluid = segmented and entity.get_fluid_segment_fluid(i) or entity.get_fluid(i)
-      if fluid and fluid.name == old_name then
-        local filter = entity.get_fluid_filter(i)
-        if filter and filter.name == old_name then
-          assert(entity.set_fluid_filter(i, old_name), "Yuoki migration: incompatible fixed fluid filter")
+      local filter = entity.get_fluid_filter(i)
+      if filter and filter.name == old_name then
+        local editable = entity.set_fluid_filter(i, old_name)
+        -- Empty fixed filters are machine restrictions, not contents to migrate.
+        assert(editable or not fluid or fluid.name ~= old_name, "Yuoki migration: incompatible fixed fluid filter")
+        if editable then
           table.insert(filters, { entity = entity, index = i })
         end
+      end
+      if fluid and fluid.name == old_name then
         local segment = segmented and (entity.surface.index .. ":" .. entity.get_fluid_segment_id(i))
         if not segment or not seen_segments[segment] then
           table.insert(storages, { entity = entity, index = i, segmented = segmented, fluid = fluid })
