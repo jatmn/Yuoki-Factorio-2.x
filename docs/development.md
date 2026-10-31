@@ -150,8 +150,36 @@ configuration; include Recycler with Quality, and Elevated Rails with Space Age.
 The scenario is developer-only and is excluded from the release ZIP. It does
 not replace saved-game upgrade testing or validation of third-party mod packs.
 
-The obsolete `yuoki-prod-mod-behaviour` startup setting has been retired: its
-module limitation fields no longer controlled productivity in Factorio 2.1.
-Existing recipe-based productivity permissions are preserved. Replacement
-stacks that exceed the new item's stack size spill the excess next to their
-owner, preserving count and quality rather than silently discarding items.
+For productivity behavior, copy `tests/factorio/productivity.lua` into a separate
+scenario's `control.lua` and run it with `--test-ticks 601`. Run both setting
+values with the same four official mod configurations. The test asserts module
+eligibility and actual crafting: 40 wood yields 20 chests in restricted mode,
+or 25 with a Yuoki science module in unrestricted mode; vanilla productivity
+modules remain rejected and speed/efficiency modules remain accepted.
+For a headless unrestricted run, use a fresh mod directory without
+`mod-settings.dat` and a temporary test mod depending on `Yuoki` whose
+`settings-updates.lua` contains:
+
+```lua
+data.raw["bool-setting"]["yuoki-prod-mod-behaviour"].default_value = false
+```
+
+The `yuoki-prod-mod-behaviour` startup toggle retains its original polarity:
+checked (the default) uses recipe productivity restrictions; unchecked permits
+the four Yuoki productivity modules on all recipes in machines that accept them.
+Vanilla and other productivity modules retain their recipe eligibility through
+module category filters. Machine effect/category restrictions, productivity
+caps and products excluded from productivity remain in force. A shared category
+containing both productivity and non-productivity modules is split so the
+non-productivity modules retain access. Mods that rewrite these prototypes after
+Yuoki's final-fixes stage may need integration adjustments.
+
+**Before re-enabling restrictions in an existing save, remove Yuoki productivity
+modules from machines using recipes that normally reject productivity.** Factorio
+removes newly incompatible installed modules during prototype fixup, before
+`on_configuration_changed` or migration scripts can recover them. This was
+reproduced by loading the same save with each setting value; there is no recovery
+inventory for those modules. Disabling restrictions does not require this step.
+
+Replacement stacks that exceed the new item's stack size spill the excess next
+to their owner, preserving count and quality rather than discarding items.
