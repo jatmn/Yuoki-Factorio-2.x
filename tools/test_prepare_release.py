@@ -98,7 +98,8 @@ class ReleaseTests(unittest.TestCase):
         config = json.loads((root / '.github/release-please-config.json').read_text())
         self.assertIs(config['draft-pull-request'], True)
         self.assertIs(config['draft'], True)
-        self.assertRegex(config['bootstrap-sha'], r'^[0-9a-f]{40}$')
+        # Exclude all history through the completed 1.3.0 release merge (#19).
+        self.assertEqual(config['bootstrap-sha'], '50ea38b9703a13e8644c3bcfe6e400b3bf2b4a5c')
         self.assertEqual(set(config['packages']), {'.'})
         package = config['packages']['.']
         self.assertEqual(package['release-type'], 'simple')
@@ -120,6 +121,9 @@ class ReleaseTests(unittest.TestCase):
             self.assertRegex(value, r'^[0-9]+\.[0-9]+\.[0-9]+$')
             self.assertNotEqual(value, '0.0.0')
             self.assertTrue(all(int(part) <= 65535 for part in value.split('.')))
+        if manifest:
+            self.assertLessEqual(tuple(map(int, manifest['.'].split('.'))),
+                                 tuple(map(int, version.split('.'))))
 
     def test_unpublished_draft_stops_normal_workflow_before_release_please(self):
         workflow = (Path(__file__).resolve().parents[1] /
