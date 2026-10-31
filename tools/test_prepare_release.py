@@ -93,6 +93,40 @@ class ReleaseTests(unittest.TestCase):
                 self.assertIn('must contain authored entries', result.stderr)
                 self.assertEqual(list(self.output.iterdir()), [])
 
+    def test_malformed_newest_section_boundaries_stop_before_build(self):
+        separator = '-' * 99 + '\n'
+        history = 'Version: 1.3.0\n  Changes:\n    - Old history.\n'
+        for boundary in ('', '-' * 98 + '\n', '-' * 100 + '\n', '-' * 99 + ' \n'):
+            for current in (self.notes, 'Version: 1.3.1\n  Fixes:\n'):
+                for tail in ('', separator + 'Version: 1.2.0\n  Changes:\n    - Older.\n'):
+                    with self.subTest(boundary=boundary, current=current, tail=tail):
+                        (self.root / 'changelog.txt').write_text(
+                            separator + current + boundary + history + tail)
+                        result = self.prepare()
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn('another Version header', result.stderr)
+                        self.assertEqual(list(self.output.iterdir()), [])
+        (self.root / 'changelog.txt').write_text(separator + '\n' + self.notes)
+        result = self.prepare()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Newest changelog section must match', result.stderr)
+        self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_separator_like_entries_and_final_section_are_preserved(self):
+        separator = '-' * 99 + '\n'
+        notes = self.notes + '    - A divider: ' + separator + '    - Keep this entry too.\n'
+        for history in ('', separator + 'Version: 1.3.0\n  Changes:\n    - Old history.\n'):
+            with self.subTest(history=history):
+                changelog = separator + notes + history
+                (self.root / 'changelog.txt').write_text(changelog)
+                result = self.prepare()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((self.output / 'release-notes.md').read_text(),
+                                 f'```text\n{notes}```\n')
+                with zipfile.ZipFile(self.output / 'Yuoki_1.3.1.zip') as archive:
+                    self.assertEqual(archive.read('Yuoki_1.3.1/changelog.txt').decode(),
+                                     changelog)
+
     def test_repository_release_inputs_preserve_release_contract(self):
         root = Path(__file__).resolve().parents[1]
         config = json.loads((root / '.github/release-please-config.json').read_text())

@@ -24,13 +24,15 @@ def prepare(tag, output):
         raise ValueError('This release workflow targets Factorio 2.1')
 
     changelog = release_source('changelog.txt').read_text()
-    sections = changelog.split('-' * 99 + '\n')
+    sections = re.split(r'^-{99}\n', changelog, flags=re.MULTILINE)
     if sections[0].strip() or len(sections) < 2:
         raise ValueError('Changelog must begin with the Factorio 99-dash separator')
-    section = sections[1].strip('\n')
+    section = sections[1].rstrip('\n')
     lines = section.splitlines()
     if not lines or lines[0] != f'Version: {version}':
         raise ValueError('Newest changelog section must match the release version')
+    if any(line.startswith('Version:') for line in lines[1:]):
+        raise ValueError('Newest changelog section contains another Version header; check separators')
     if not any(line.startswith('    - ') and line[6:].strip() for line in lines):
         raise ValueError('Release changelog must contain authored entries')
     # Preserve historical sections and the authors' wording. GitHub uses a text
