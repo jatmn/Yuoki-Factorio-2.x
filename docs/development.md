@@ -19,6 +19,7 @@ validation. Initial installation runs all checks when that revision has no route
 | Shipped Lua | Lua syntax, Luacheck, StyLua and packaging |
 | Test-only Lua | Lua checks |
 | Python | Python AST syntax and CI/Pullfrog/package regressions |
+| Release Please config, hidden manifest or version file | Python checks, including release-input contract validation |
 | Pullfrog helper or its tests | Python checks and actionlint |
 | Package builder or validator | Python checks and packaging |
 | Metadata, locale, graphics and other shipped files | Packaging |

@@ -17,6 +17,9 @@ def classify(paths):
             checks['lua'] = True
         if path.endswith('.py') or path == '.github/workflows/python.yml':
             checks['python'] = True
+        if path in {'.github/release-please-config.json',
+                    '.github/.release-please-manifest.json', '.github/version.txt'}:
+            checks['python'] = True
         if path.startswith('.github/workflows/'):
             checks['workflows'] = True
             # Preserve the existing authorization gate on every workflow edit.

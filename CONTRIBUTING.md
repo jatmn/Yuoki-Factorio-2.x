@@ -20,6 +20,7 @@ a PR update; rerun affected checks after repairs. See
 - Python/tools: parse tracked Python files without importing or executing game
   code and run `python3 tools/test_ci_changes.py` plus
   `python3 tools/test_pullfrog_command.py` and `python3 tools/test_package.py`.
+  Release tooling also requires `python3 tools/test_prepare_release.py`.
 - Workflows: run **actionlint 1.7.12**. Changes to the CI dispatcher or router
   require all lightweight checks, including the Lua configuration probes.
 - Shipped sources, metadata, locale, graphics, license notices or packaging
@@ -42,3 +43,7 @@ Use a Conventional Commit title, describe the problem and resulting behavior,
 link related issues, and include validation results and limitations. Keep
 credentials, local machine paths, game binaries, saves and build output out
 of Git.
+
+For draft release PRs, versioning and installable GitHub release assets, follow
+[the release process](docs/releases.md). Authors continue maintaining
+`changelog.txt`; merging the release PR is the publication decision.

@@ -32,3 +32,5 @@ jobs:
         run: python3 tools/test_pullfrog_command.py
       - name: Test package source boundaries
         run: python3 tools/test_package.py
+      - name: Test installable release and authored notes
+        run: python3 tools/test_prepare_release.py

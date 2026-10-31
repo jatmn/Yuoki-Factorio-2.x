@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "50ea38b9703a13e8644c3bcfe6e400b3bf2b4a5c",
+  "draft-pull-request": true,
+  "draft": true,
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "initial-version": "1.3.1",
+      "include-component-in-tag": false,
+      "skip-changelog": true,
+      "version-file": ".github/version.txt",
+      "extra-files": [
+        {"type": "json", "path": "info.json", "jsonpath": "$.version"}
+      ],
+      "pull-request-footer": "Keep this PR in draft while the release is in progress. Authors maintain changelog.txt; its newest section must match this release version. Mark ready and merge only when ready to publish. The release workflow builds and validates the installable ZIP before publishing."
+    }
+  }
+}
