@@ -4,8 +4,7 @@ if settings.startup["yuoki-prod-mod-behaviour"].value then
   return
 end
 
-local unrestricted = "yuoki-unrestricted-productivity"
-data:extend({ { type = "module-category", name = unrestricted } })
+local unrestricted = {}
 local category_additions = {}
 local function inherit_category(original, added)
   category_additions[original] = category_additions[original] or {}
@@ -13,14 +12,20 @@ local function inherit_category(original, added)
 end
 for _, name in ipairs({ "y-pink-module-1", "y-pink-module-2", "y-pink-module-3", "y_modul_science" }) do
   local module = data.raw.module[name]
-  inherit_category(module.category, unrestricted)
-  module.category = unrestricted
+  -- Keep original machine permissions distinct, even when other mods split them.
+  local category = "yuoki-unrestricted-" .. module.category
+  if not unrestricted[category] then
+    data:extend({ { type = "module-category", name = category } })
+    unrestricted[category] = true
+  end
+  inherit_category(module.category, category)
+  module.category = category
 end
 
 -- A mixed category must not make speed/efficiency modules lose recipe access.
 local productive, nonproductive = {}, {}
 for _, module in pairs(data.raw.module) do
-  if module.category ~= unrestricted then
+  if not unrestricted[module.category] then
     local categories = (module.effect.productivity or 0) > 0 and productive or nonproductive
     categories[module.category] = true
   end
@@ -72,7 +77,7 @@ for _, recipe in pairs(data.raw.recipe) do
       end
     end
     for _, category in pairs(categories) do
-      if not restricted[category] and category ~= unrestricted then
+      if not restricted[category] and not unrestricted[category] then
         table.insert(allowed, category)
       end
     end
@@ -80,12 +85,14 @@ for _, recipe in pairs(data.raw.recipe) do
     recipe.allowed_module_categories = allowed
   end
   if recipe.allowed_module_categories then
-    local found = false
+    local present = {}
     for _, category in pairs(recipe.allowed_module_categories) do
-      found = found or category == unrestricted
+      present[category] = true
     end
-    if not found then
-      table.insert(recipe.allowed_module_categories, unrestricted)
+    for category in pairs(unrestricted) do
+      if not present[category] then
+        table.insert(recipe.allowed_module_categories, category)
+      end
     end
     table.sort(recipe.allowed_module_categories)
   end

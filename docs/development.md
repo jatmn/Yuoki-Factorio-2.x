@@ -171,6 +171,13 @@ For a headless unrestricted run, use a fresh mod directory without
 data.raw["bool-setting"]["yuoki-prod-mod-behaviour"].default_value = false
 ```
 
+Also repeat the productivity scenario with `tests/factorio/category-fixture/`
+copied into the isolated mod directory as `yuoki-category-fixture`, and enable
+`yuoki-category-fixture` in `mod-list.json`. Run both setting values. This fixture
+gives the Yuoki modules two different original categories and checks that each
+machine accepts only its original module family on both restricted and
+unrestricted recipes. The fixture is developer-only and does not ship.
+
 The `yuoki-prod-mod-behaviour` startup toggle retains its original polarity:
 checked (the default) uses recipe productivity restrictions; unchecked permits
 the four Yuoki productivity modules on all recipes in machines that accept them.

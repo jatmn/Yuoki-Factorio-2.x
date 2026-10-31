@@ -8,9 +8,9 @@ script.on_init(function()
   local surface = game.surfaces[1]
   surface.request_to_generate_chunks({ 0, 0 }, 1)
   surface.force_generate_chunk_requests()
-  local function machine(x, recipe)
+  local function machine(x, recipe, name)
     local entity = assert(surface.create_entity({
-      name = "assembling-machine-3",
+      name = name or "assembling-machine-3",
       position = { x, 0 },
       force = "player",
     }))
@@ -41,6 +41,24 @@ script.on_init(function()
   local cable = machine(10, "copper-cable")
   for _, name in ipairs({ "productivity-module", "y-pink-module-1", "y_modul_science" }) do
     assert(cable.get_module_inventory().can_insert({ name = name, count = 1 }), name .. " lost copper cable access")
+  end
+
+  if script.active_mods["yuoki-category-fixture"] then
+    for i, category in ipairs({ "yuoki-test-pink", "productivity" }) do
+      for j, recipe in ipairs({ "copper-cable", "wooden-chest" }) do
+        local entity = machine(15 + (i * 2 + j) * 5, recipe, "yuoki-test-" .. category)
+        local inventory = entity.get_module_inventory()
+        for k, name in ipairs({ "y-pink-module-1", "y-pink-module-2", "y-pink-module-3", "y_modul_science" }) do
+          local matches_machine = (k <= 2) == (category == "yuoki-test-pink")
+          local expected = matches_machine and (recipe == "copper-cable" or not restricted)
+          assert(
+            inventory.can_insert({ name = name, count = 1 }) == expected,
+            entity.name .. "/" .. recipe .. "/" .. name
+          )
+        end
+      end
+    end
+    log("YUOKI ORIGINAL MACHINE CATEGORIES PASS")
   end
 end)
 
