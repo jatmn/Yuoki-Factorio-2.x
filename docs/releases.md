@@ -31,6 +31,8 @@ author-written section of `changelog.txt`.
    and keep the release date current. The historic `info.json.date` field is
    descriptive metadata; Factorio does not require it for loading.
 3. Mark the release PR ready, review checks and merge when ready to publish.
+   If checks are missing or awaiting approval, follow
+   [Release PR checks](#release-pr-checks) before merging.
    Keep Release Please's branch, title/body structure and autorelease labels.
 4. The workflow creates an unpublished GitHub draft, checks out the exact
    release merge commit, requires tag/manifest/metadata/changelog agreement,
@@ -45,6 +47,24 @@ Factorio **2.1.20 or later in the 2.1 series**, as declared in `info.json`.
 Existing incompatible mods listed there still cannot be enabled alongside Yuoki.
 
 ## Release failures and recovery
+
+### Release PR checks
+
+When `RELEASE_PLEASE_TOKEN` is unset, the workflow uses `github.token`
+(`GITHUB_TOKEN`). Checks on PRs created or updated with that token do not run
+automatically: [GitHub documents an approval-required state](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow)
+for these PR events. If the PR shows **Approve workflows to run**, a maintainer
+with write access must select it. If no CI run appears, close and reopen the
+unmerged release PR yourself in GitHub; this repository's CI includes the
+[`pull_request` `reopened` event](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+Wait for CI to finish and review its results for the latest release PR commit
+before merging. Recheck after each Release Please update; results for an older
+commit are insufficient. CI selects checks from the changed files, so unrelated
+jobs may be skipped. The publication workflow validates the package **after
+merge**; that does not supply pre-merge CI results.
+
+### Retry an unpublished release
 
 Build/upload failures leave the release unpublished. Fix transient problems,
 then run **Release Please** manually on **main**, with `retry_tag` set to the
@@ -159,9 +179,6 @@ build development ZIPs without requiring a merged release manifest.
   categories and four-space bullet entries. Existing historical text is
   preserved. Release preparation checks the current section/version; it does
   not claim to lint every historical entry.
-- [Release Please bootstrap and manifest configuration](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
-  and [configuration schema](https://github.com/googleapis/release-please/blob/main/schemas/config.json):
-  initial version, bootstrap boundary, draft PR/release settings and JSON updates.
 
 ZIP validation checks tracked membership, exact source bytes, required notices,
 CRC and checksum. It does not replace Factorio engine, save or graphics testing
