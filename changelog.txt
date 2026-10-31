@@ -7,6 +7,7 @@ Date: 30. 10. 2026
     - Restored the mastercrafted Obninsk reactor's working overlay and light.
     - Restored the standard Obninsk reactor's working light.
     - Fixed crashes and item loss when the slag conversion migration runs. Preserve item counts, quality, belt positions, inventory filters and logistic requests; spill excess items beside their owner when the replacement has a smaller stack size.
+    - Include car, spider vehicle and character corpse inventories in item migrations, preserving item counts and quality and spilling excess when replacement stacks are smaller.
     - Preserve valid virtual and fluid circuit signals during migration cleanup.
     - Updated the fluid replacement and alternate splitter-filter migration helpers for Factorio 2.1.
     - Preserve fluid amounts and temperatures when migrating editable pump and pipe filters, including multiple filters on connected storage. Reject incompatible fixed filters before changing fluid contents.

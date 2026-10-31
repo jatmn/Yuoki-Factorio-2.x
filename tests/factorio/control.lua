@@ -56,6 +56,54 @@ script.on_init(function()
     assert(inventory.get_item_count({ name = "stone", quality = quality }) == 10)
     assert(inventory.get_item_count({ name = "y-slag", quality = quality }) == 0)
   end)
+  for _, name in ipairs({ "car", "spidertron", "character-corpse" }) do
+    check(name .. "-inventory", function(surface)
+      local entity = create(surface, name == "character-corpse" and "character" or name)
+      local inventory = name == "character-corpse" and entity.get_main_inventory()
+        or entity.get_inventory(name == "car" and defines.inventory.car_trunk or defines.inventory.spider_trunk)
+      inventory[1].set_stack({ name = "y-slag", count = 100 })
+      inventory[2].set_stack({ name = "y-slag", count = 73, quality = quality })
+      inventory[3].set_stack({ name = "iron-plate", count = 7, quality = quality })
+      if name == "character-corpse" then
+        entity.die()
+        entity = assert(surface.find_entities_filtered({ type = "character-corpse" })[1])
+        inventory = assert(entity.get_inventory(defines.inventory.character_corpse))
+      end
+      if inventory.supports_filters() then
+        inventory.set_filter(2, { name = "y-slag", quality = quality, comparator = "=" })
+      end
+      yi.lib.migration.bulk_replace({ ["y-slag"] = "stone" })
+      local expected = quality == "normal" and { normal = 173 } or { normal = 100, [quality] = 73 }
+      for q, count in pairs(expected) do
+        assert(inventory.get_item_count({ name = "y-slag", quality = q }) == 0)
+        local total = inventory.get_item_count({ name = "stone", quality = q })
+        for _, ground in pairs(surface.find_entities_filtered({ type = "item-entity" })) do
+          assert(ground.stack.name == "stone")
+          if ground.stack.quality.name == q then
+            total = total + ground.stack.count
+          end
+        end
+        assert(total == count)
+      end
+      if inventory.supports_filters() then
+        local filter = inventory.get_filter(2)
+        assert(filter.name == "stone" and filter.quality == quality)
+      end
+      yi.lib.migration.bulk_replace({ stone = "wooden-chest" })
+      for q, count in pairs(expected) do
+        local total = inventory.get_item_count({ name = "wooden-chest", quality = q })
+        for _, ground in pairs(surface.find_entities_filtered({ type = "item-entity" })) do
+          assert(ground.stack.name == "wooden-chest")
+          if ground.stack.quality.name == q then
+            total = total + ground.stack.count
+          end
+        end
+        assert(total == count)
+        assert(inventory.get_item_count({ name = "stone", quality = q }) == 0)
+      end
+      assert(inventory.get_item_count({ name = "iron-plate", quality = quality }) == 7)
+    end)
+  end
   check("smaller-stacks", function(surface)
     local chest = create(surface, "steel-chest")
     chest.get_inventory(defines.inventory.chest)[1].set_stack({ name = "y-slag", count = 100, quality = quality })
