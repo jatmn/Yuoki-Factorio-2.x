@@ -1,0 +1,8 @@
+{
+  "name": "yuoki-migration-fixture",
+  "version": "1.0.0",
+  "title": "Yuoki saved migration regression fixture",
+  "author": "Yuoki contributors",
+  "factorio_version": "2.1",
+  "dependencies": ["base", "Yuoki"]
+}

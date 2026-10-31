@@ -157,6 +157,22 @@ configuration; include Recycler with Quality, and Elevated Rails with Space Age.
 The scenario is developer-only and is excluded from the release ZIP. It does
 not replace saved-game upgrade testing or validation of third-party mod packs.
 
+`tests/factorio/migration-fixture/` is a developer-only mod for testing the
+`1.3.1.lua` follow-up on saves that already recorded `1.2.21.lua`. Use it only in
+an isolated mod directory: it supplies a minimal `angels-slag` item. Create the
+write-data `saves/` directory first. Bind the server to localhost and disable public
+and LAN visibility in its settings. Seed a save
+with Yuoki before the vehicle/corpse scan fix, then load it with `--start-server`
+and `auto_pause: false` in the server settings. The fixture verifies the omitted
+inventories, saves `yuoki-old-migration-applied.zip`, and pauses. Stop the server,
+then load that save with the repaired
+package; it checks counts, quality, existing converted items and unrelated items,
+then saves `yuoki-followup-applied.zip` and pauses again. Run the latter with
+`--test-save` and at least four test ticks to prove the follow-up does not repeat.
+Run with and without Quality; missing/hidden target
+variants must leave the original slag untouched. The mod version need not change
+for Factorio to discover a newly added migration filename.
+
 Fluid migration checks include editable pump filters and multiple filters on a
 shared pipe segment, including a neighboring segment already holding the target
 fluid. The helper captures each source segment once, clears its fluid, remaps
