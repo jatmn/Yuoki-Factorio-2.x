@@ -78,22 +78,37 @@ class ReleaseTests(unittest.TestCase):
         result = self.prepare('v1.3.2')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.output / 'Yuoki_1.3.2.zip').exists())
-        self.assertNotIn('Restored graphics', (self.output / 'release-notes.md').read_text())
+        self.assertEqual(
+            (self.output / 'release-notes.md').read_text(),
+            '```text\nVersion: 1.3.2\n  Fixes:\n    - Next fix.\n```\n',
+        )
 
     def test_unpublished_draft_stops_normal_workflow_before_release_please(self):
         workflow = (Path(__file__).resolve().parents[1] /
                     '.github/workflows/release-please.yml').read_text()
         # Execute the actual preflight shell with simulated GitHub API output.
         script = textwrap.dedent(workflow.split('run: |\n', 1)[1].split('\n\n', 1)[0])
+        expected_args = [
+            'api', 'repos/fixture/fixture/releases', '--paginate', '--jq',
+            r'.[] | select(.draft and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) | .tag_name',
+        ]
         cli = self.workspace / 'gh'
-        cli.write_text('#!/bin/sh\nprintf "%s" "$PENDING_DRAFT"\n')
+        cli.write_text(
+            f'#!{sys.executable}\n'
+            'import os, sys\n'
+            f'if sys.argv[1:] != {expected_args!r}:\n'
+            '    sys.exit("Unexpected GitHub API request: " + repr(sys.argv[1:]))\n'
+            'sys.stdout.write(os.environ["PENDING_DRAFT"])\n'
+            'sys.exit(int(os.environ["API_EXIT"]))\n'
+        )
         cli.chmod(0o755)
-        for pending, expected in (('', 0), ('v1.3.1', 1)):
-            with self.subTest(pending=pending):
+        for pending, api_exit, expected in (('', 0, 0), ('v1.3.1', 0, 1), ('', 42, 42)):
+            with self.subTest(pending=pending, api_exit=api_exit):
                 result = subprocess.run(
                     ['bash', '-e', '-o', 'pipefail', '-c', script], capture_output=True, text=True,
                     env={**os.environ, 'PATH': str(self.workspace) + os.pathsep + os.environ['PATH'],
-                         'PENDING_DRAFT': pending, 'GH_REPO': 'fixture/fixture'},
+                         'PENDING_DRAFT': pending, 'API_EXIT': str(api_exit),
+                         'GH_REPO': 'fixture/fixture'},
                 )
                 self.assertEqual(result.returncode, expected, result.stderr)
                 if pending:
