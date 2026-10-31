@@ -2,6 +2,7 @@
 """Regressions for CI routing and Lua selection; no game or dependency mods are loaded."""
 from pathlib import Path
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -14,20 +15,24 @@ from ci_changes import classify
 ROUTER = Path(__file__).with_name('ci_changes.py').resolve()
 
 
+# Steps that every listed job must run; each copy must stay identical, env included.
+REPEATED_STEPS = {('lua.yml', 'Select Lua files for this event'): 2}
+
+
 def workflow_block(workflow, name):
     text = (ROUTER.parents[1] / '.github/workflows' / workflow).read_text()
-    blocks = set()
-    # A step repeated across jobs (Lua file selection) must stay identical.
-    for step in text.split(f'      - name: {name}\n')[1:]:
-        lines = []
-        for line in step.split('      - name:', 1)[0].split('        run: |\n', 1)[1].splitlines():
-            if line.strip() and not line.startswith('          '):
-                break
-            lines.append(line)
-        blocks.add(textwrap.dedent('\n'.join(lines)))
-    if len(blocks) != 1:
-        raise AssertionError(f'{workflow}: expected one definition of {name!r}, found {len(blocks)}')
-    return blocks.pop()
+    steps = [re.split(r'\n(?=      - |  \S)', step, maxsplit=1)[0]
+             for step in text.split(f'      - name: {name}\n')[1:]]
+    copies = REPEATED_STEPS.get((workflow, name), 1)
+    if len(steps) != copies or len(set(steps)) != 1:
+        raise AssertionError(f'{workflow}: expected {copies} identical {name!r} step(s), '
+                             f'found {len(steps)} with {len(set(steps))} distinct definition(s)')
+    lines = []
+    for line in steps[0].split('        run: |\n', 1)[1].splitlines():
+        if line.strip() and not line.startswith('          '):
+            break
+        lines.append(line)
+    return textwrap.dedent('\n'.join(lines))
 
 
 class RoutingTests(unittest.TestCase):
