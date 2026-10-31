@@ -18,6 +18,8 @@ Date: 30. 10. 2026
     - Restored the high-pressure pump's intended module slot.
     - Enforce the intended minimum input temperatures for ten generators while retaining their fluid-type requirements.
     - Restored the productivity toggle: checked uses recipe restrictions; unchecked allows all four Yuoki productivity modules on all recipes in compatible machines. Preserve each module's original machine-category restrictions and other modules' recipe eligibility.
+  Tests:
+    - Verify acid-neutralization output fluids and quantities at each physical washer port, including rotated machines.
   Notes:
     - Before re-enabling productivity restrictions in an existing save, remove Yuoki productivity modules from machines using recipes that normally reject productivity. Factorio otherwise deletes these installed modules during loading, before migrations can recover them.
 ---------------------------------------------------------------------------------------------------

@@ -240,7 +240,10 @@ The fixture asserts unchanged recipes, item counts/quality, fluid amounts and
 temperatures, buffer capacities and pipe connections. It then runs Engines'
 acid-neutralization recipe through physical pipes in both washers and every
 orientation/quality, requiring exactly 20 contaminated water and 9 mechanical
-force. Successful logs include `WASHER_PRESERVED` and `WASHER_PASS`.
+force. Each physical output port must carry its designated fluid and quantity;
+the expected side is rotated with the machine, independently of recipe filters.
+Swapping the two output connections must fail this check even when total output
+amounts are unchanged. Successful logs include `WASHER_PRESERVED` and `WASHER_PASS`.
 
 Repeat with base, Quality + Recycler, Space Age + Quality + Recycler + Elevated
 Rails, and Space Age + Recycler + Elevated Rails without Quality. Repeating the

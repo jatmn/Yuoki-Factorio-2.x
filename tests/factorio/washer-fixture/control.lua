@@ -1,6 +1,40 @@
 -- luacheck: globals script game storage prototypes helpers
 local names = { "y-dirtwasher", "y_mc_dirtwasher" }
 local directions = { defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west }
+local right = {
+  [defines.direction.north] = { x = 1, y = 0 },
+  [defines.direction.east] = { x = 0, y = 1 },
+  [defines.direction.south] = { x = -1, y = 0 },
+  [defines.direction.west] = { x = 0, y = -1 },
+}
+
+local function check_output_port(entity, pipe)
+  local axis = right[entity.direction]
+  local dx = pipe.entity.position.x - entity.position.x
+  local dy = pipe.entity.position.y - entity.position.y
+  -- Check physical positions, independently of recipe filters and storage indexes.
+  if -dx * axis.y + dy * axis.x ~= 2 then
+    return false
+  end
+  local side = dx * axis.x + dy * axis.y
+  assert(side == 1 or side == -1, "unexpected physical output port")
+  local expected = side == 1 and "y-con_water" or "y-mechanical-force"
+  local expected_amount = side == 1 and 20 or 9
+  local delivered = 0
+  for name, amount in pairs(pipe.entity.get_fluid_contents()) do
+    assert(name == expected, "wrong fluid at physical output port: expected " .. expected)
+    delivered = delivered + amount
+  end
+  assert(delivered > 0, "no fluid reached physical output port")
+  local buffered = entity.get_fluid(pipe.storage_index)
+  if buffered then
+    assert(buffered.name == expected, "wrong fluid in output buffer")
+    delivered = delivered + buffered.amount
+  end
+  assert(math.abs(delivered - expected_amount) < 0.001, "wrong amount at physical output port")
+  return true
+end
+
 local function qualities()
   return prototypes.quality.rare and { "normal", "rare" } or { "normal" }
 end
@@ -189,11 +223,16 @@ script.on_event(defines.events.on_tick, function(event)
   for _, test in ipairs(storage.acid) do
     assert(test.entity.products_finished == 1, "acid recipe did not complete exactly once")
     local totals = test.entity.get_fluid_contents()
+    local outputs = 0
     for _, pipe in ipairs(test.pipes) do
+      if check_output_port(test.entity, pipe) then
+        outputs = outputs + 1
+      end
       for name, amount in pairs(pipe.entity.get_fluid_contents()) do
         totals[name] = (totals[name] or 0) + amount
       end
     end
+    assert(outputs == 2, "missing physical output port")
     assert(math.abs((totals["y-con_water"] or 0) - 20) < 0.001, "contaminated-water count")
     assert(math.abs((totals["y-mechanical-force"] or 0) - 9) < 0.001, "mechanical-force count")
     assert((totals.water or 0) < 0.001 and (totals["sulfuric-acid"] or 0) < 0.001, "inputs not consumed")
