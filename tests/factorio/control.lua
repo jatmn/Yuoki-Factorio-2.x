@@ -131,7 +131,7 @@ script.on_init(function()
     assert(other.get_fluid_segment_fluid(1).name == "crude-oil")
   end)
   check("prototypes", function()
-    assert(not settings.startup["yuoki-prod-mod-behaviour"])
+    assert(settings.startup["yuoki-prod-mod-behaviour"])
     assert(prototypes.entity.y_hppump.module_inventory_size == 1)
     local expected = { normal = 1, uncommon = 1.15, rare = 1.25, epic = 1.35, legendary = 1.45 }
     for _, name in ipairs({
