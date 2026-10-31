@@ -16,13 +16,18 @@ ROUTER = Path(__file__).with_name('ci_changes.py').resolve()
 
 def workflow_block(workflow, name):
     text = (ROUTER.parents[1] / '.github/workflows' / workflow).read_text()
-    step = text.split(f'      - name: {name}\n', 1)[1].split('      - name:', 1)[0]
-    lines = []
-    for line in step.split('        run: |\n', 1)[1].splitlines():
-        if line.strip() and not line.startswith('          '):
-            break
-        lines.append(line)
-    return textwrap.dedent('\n'.join(lines))
+    blocks = set()
+    # A step repeated across jobs (Lua file selection) must stay identical.
+    for step in text.split(f'      - name: {name}\n')[1:]:
+        lines = []
+        for line in step.split('      - name:', 1)[0].split('        run: |\n', 1)[1].splitlines():
+            if line.strip() and not line.startswith('          '):
+                break
+            lines.append(line)
+        blocks.add(textwrap.dedent('\n'.join(lines)))
+    if len(blocks) != 1:
+        raise AssertionError(f'{workflow}: expected one definition of {name!r}, found {len(blocks)}')
+    return blocks.pop()
 
 
 class RoutingTests(unittest.TestCase):
@@ -79,9 +84,7 @@ class RoutingTests(unittest.TestCase):
                                cwd=root, env={**os.environ, 'BASE': base, 'EVENT_NAME': 'pull_request'}, check=True)
 
     def test_lua_workflow_selects_type_changes(self):
-        workflow = ROUTER.parents[1] / '.github/workflows/lua.yml'
-        step = workflow.read_text().split('      - name: Select Lua files for this event\n', 1)[1]
-        selection = textwrap.dedent(step.split('        run: |\n', 1)[1].split('      - name:', 1)[0])
+        selection = workflow_block('lua.yml', 'Select Lua files for this event')
         for starts_as_symlink in (False, True):
             with self.subTest(starts_as_symlink=starts_as_symlink), \
                     tempfile.TemporaryDirectory(prefix='yuoki-ci-type-') as directory:

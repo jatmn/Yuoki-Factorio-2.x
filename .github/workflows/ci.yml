@@ -44,21 +44,25 @@ jobs:
           fi
 
   lua:
+    name: Lua
     needs: changes
     if: needs.changes.outputs.lua == 'true'
     uses: ./.github/workflows/lua.yml
 
   python:
+    name: Python
     needs: changes
     if: needs.changes.outputs.python == 'true'
     uses: ./.github/workflows/python.yml
 
   package:
+    name: Package
     needs: changes
     if: needs.changes.outputs.package == 'true'
     uses: ./.github/workflows/package.yml
 
   actionlint:
+    name: Workflows
     needs: changes
     if: needs.changes.outputs.workflows == 'true'
     uses: ./.github/workflows/workflows.yml
