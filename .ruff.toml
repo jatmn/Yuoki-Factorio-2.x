@@ -1,0 +1,7 @@
+# Python lint for repository tooling: correctness rules only, shared by every
+# Yuoki mod repository. E9 reports syntax errors; F (Pyflakes) reports undefined
+# names and unused imports/variables. Formatting and style are not enforced.
+target-version = "py312"
+
+[lint]
+select = ["E9", "F"]

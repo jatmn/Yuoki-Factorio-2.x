@@ -18,7 +18,9 @@ a PR update; rerun affected checks after repairs. See
   Resolve warnings in touched files without blanket suppressions. The Lua
   baseline is established; preserve it without reformatting unrelated files.
 - Python/tools: parse tracked Python files without importing or executing game
-  code and run `python3 tools/test_ci_changes.py` plus
+  code, lint every tracked Python file with **Ruff 0.17.3**
+  (`git ls-files -z -- '*.py' | xargs -0 -r ruff check --config .ruff.toml --`)
+  and run `python3 tools/test_ci_changes.py` plus
   `python3 tools/test_pullfrog_command.py` and `python3 tools/test_package.py`.
   Release tooling also requires `python3 tools/test_prepare_release.py`.
 - Workflows: run **actionlint 1.7.12**. Changes to the CI dispatcher or router
@@ -29,7 +31,8 @@ a PR update; rerun affected checks after repairs. See
 - Documentation: verify links, commands and the resulting diff.
 
 Lua CI checks changed files on PRs and all tracked Lua files on relevant pushes
-to `main` and `release/1.3.0`, including lint/formatter configuration changes.
+to `main` and `release/1.3.0`, and on PRs that change the Luacheck/StyLua
+configuration or the Lua workflow.
 Formatting a touched file can create a mechanical diff within that file; keep
 it separate from behavioral edits where practical. Do not reformat the whole
 repository during ordinary contribution work.

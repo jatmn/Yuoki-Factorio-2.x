@@ -6,8 +6,12 @@ on:
 permissions:
   contents: read
 
+# Separate jobs so PR checks show Luacheck (lint) and StyLua (formatting) apart.
+# Both jobs select files with the same step; tools/test_ci_changes.py
+# requires the copies to stay identical.
 jobs:
-  lua:
+  luacheck:
+    name: Luacheck
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -32,7 +36,9 @@ jobs:
         run: |
           mkdir -p .cache
           git diff --check "$BASE" HEAD
-          if [ "$EVENT_NAME" = pull_request ]; then
+          # Lint, formatter or toolchain changes recheck the whole baseline on PRs too.
+          if [ "$EVENT_NAME" = pull_request ] &&
+            git diff --quiet "$BASE" HEAD -- .luacheckrc .stylua.toml .github/workflows/lua.yml; then
             git diff --no-renames --name-only --diff-filter=ACMRT -z "$BASE" HEAD -- '*.lua' > .cache/ci-lua-files
           else
             git ls-files -z -- '*.lua' > .cache/ci-lua-files
@@ -49,6 +55,30 @@ jobs:
           args: >-
             --filename control.lua - < /dev/null &&
             xargs -0 -r luacheck -- < .cache/ci-lua-files
+
+  stylua:
+    name: StyLua
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Lua files for this event
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          mkdir -p .cache
+          git diff --check "$BASE" HEAD
+          # Lint, formatter or toolchain changes recheck the whole baseline on PRs too.
+          if [ "$EVENT_NAME" = pull_request ] &&
+            git diff --quiet "$BASE" HEAD -- .luacheckrc .stylua.toml .github/workflows/lua.yml; then
+            git diff --no-renames --name-only --diff-filter=ACMRT -z "$BASE" HEAD -- '*.lua' > .cache/ci-lua-files
+          else
+            git ls-files -z -- '*.lua' > .cache/ci-lua-files
+          fi
       - name: Install StyLua
         uses: JohnnyMorganz/stylua-action@76fd70c03e6340ceaf673366712db9b20560b402 # v5
         with:
