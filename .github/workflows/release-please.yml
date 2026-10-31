@@ -1,0 +1,97 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      retry_tag:
+        description: 'Resume an unpublished draft after a failed upload/build (for example v1.3.1)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'jatmn/Yuoki-Factorio-2.x' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Require unfinished publication to be resumed first
+        if: inputs.retry_tag == ''
+        run: |
+          pending=$(gh api "repos/$GH_REPO/releases" --paginate --jq \
+            '.[] | select(.draft and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) | .tag_name')
+          if [ -n "$pending" ]; then
+            echo "::error::Resume the unpublished release with workflow_dispatch retry_tag: $pending"
+            exit 1
+          fi
+
+      # Only a merged Release Please PR creates a release. Keep it unpublished
+      # until the exact merged commit has a validated ZIP and authored notes.
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        if: inputs.retry_tag == ''
+        id: release
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          target-branch: main
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+          skip-github-pull-request: true
+
+      - name: Locate the unpublished release commit
+        if: steps.release.outputs.release_created == 'true' || inputs.retry_tag != ''
+        id: draft
+        env:
+          TAG: ${{ inputs.retry_tag || steps.release.outputs.tag_name }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          gh release view "$TAG" --json isDraft,targetCommitish,tagName > "$RUNNER_TEMP/release.json"
+          jq -e --arg tag "$TAG" '.isDraft == true and .tagName == $tag' "$RUNNER_TEMP/release.json"
+          sha=$(jq -r '.targetCommitish' "$RUNNER_TEMP/release.json")
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.draft.outputs.sha != ''
+        with:
+          ref: ${{ steps.draft.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build and validate the release
+        if: steps.draft.outputs.sha != ''
+        env:
+          TAG: ${{ steps.draft.outputs.tag }}
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          python3 tools/prepare_release.py --tag "$TAG"
+
+      - name: Attach the installable mod and publish
+        if: steps.draft.outputs.sha != ''
+        env:
+          TAG: ${{ steps.draft.outputs.tag }}
+        run: |
+          gh release upload "$TAG" build/dist/*.zip build/dist/SHA256SUMS --clobber
+          gh release edit "$TAG" --notes-file build/dist/release-notes.md --draft=false
+
+      # Run after publication so the next PR sees the newly published version.
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          target-branch: main
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+          skip-github-release: true
