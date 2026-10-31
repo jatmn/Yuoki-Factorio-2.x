@@ -62,3 +62,23 @@ jobs:
     needs: changes
     if: needs.changes.outputs.workflows == 'true'
     uses: ./.github/workflows/workflows.yml
+
+  # Stable name for a required status check: routed jobs are skipped or renamed
+  # depending on the diff, so require this job instead of the individual checks.
+  result:
+    name: CI result
+    needs: [changes, lua, python, package, actionlint]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - name: Require every selected check to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) echo "::error::A selected CI check finished with: $result"; exit 1 ;;
+            esac
+          done

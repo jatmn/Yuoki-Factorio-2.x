@@ -141,14 +141,15 @@ class RoutingTests(unittest.TestCase):
             for name in ('untouched.lua', 'deleted.lua', 'old.lua'):
                 (root / name).write_text('return true\n')
             git('add', '.'); git('commit', '-qm', 'base')
-            # Configuration-only changes must check the full baseline on a push.
-            for config in ('.luacheckrc', '.stylua.toml'):
+            # Lint/formatter/toolchain changes must check the full baseline on both events.
+            for config in ('.luacheckrc', '.stylua.toml', '.github/workflows/lua.yml'):
                 base = git('rev-parse', 'HEAD')
+                (root / config).parent.mkdir(parents=True, exist_ok=True)
                 (root / config).write_text('# manifest fixture\n')
                 git('add', '.'); git('commit', '-qm', 'configuration')
-                self.assertEqual(select(base, 'pull_request'), set())
-                self.assertEqual(select(base, 'push'),
-                                 {b'untouched.lua', b'deleted.lua', b'old.lua'})
+                for event in ('pull_request', 'push'):
+                    self.assertEqual(select(base, event),
+                                     {b'untouched.lua', b'deleted.lua', b'old.lua'})
             base = git('rev-parse', 'HEAD')
             unusual = 'new file\nwith $shell; characters.lua'
             git('mv', 'old.lua', unusual)
@@ -173,6 +174,7 @@ class RoutingTests(unittest.TestCase):
             (['tests/prototypes.py', 'tools/test.py'], {'python'}),
             (['tools/pullfrog_command.py'], {'python', 'workflows'}),
             (['tools/test_pullfrog_command.py'], {'python', 'workflows'}),
+            (['.ruff.toml'], {'python'}),
             (['.github/release-please-config.json'], {'python'}),
             (['.github/.release-please-manifest.json'], {'python'}),
             (['.github/version.txt'], {'python'}),

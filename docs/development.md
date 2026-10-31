@@ -11,6 +11,9 @@ separate concurrency group so a later documentation-only push cannot cancel
 an earlier push's full Lua checks. The router is loaded from the
 comparison revision, so edits to the PR's router cannot disable their own
 validation. Initial installation runs all checks when that revision has no router.
+A final `CI result` job always runs and fails if any selected check failed or was
+cancelled; it is the stable check name to require in branch rules, because routed
+jobs are reported under different names when they run or are skipped.
 
 ## Which checks run
 
@@ -18,7 +21,7 @@ validation. Initial installation runs all checks when that revision has no route
 | --- | --- |
 | Shipped Lua | Lua syntax, Luacheck, StyLua and packaging |
 | Test-only Lua | Lua checks |
-| Python | Python AST syntax and CI/Pullfrog/package regressions |
+| Python or `.ruff.toml` | Python AST syntax, Ruff lint and CI/Pullfrog/package regressions |
 | Release Please config, hidden manifest or version file | Python checks, including release-input contract validation |
 | Pullfrog helper or its tests | Python checks and actionlint |
 | Package builder or validator | Python checks and packaging |
@@ -35,8 +38,9 @@ revisions fail CI. The change job also checks diff whitespace.
 
 Lua checks use **Lua 5.2**, **Luacheck 1.2.0**, and **StyLua 2.5.2**. They check
 added/modified Lua files on PRs, including renamed files and regular-file/symlink
-type changes. Relevant pushes to `main` and `release/1.3.0` check all tracked Lua
-files, including when only the lint/formatter configuration changes. Deleted Lua
+type changes. Relevant pushes to `main` and `release/1.3.0`, and PRs that change
+`.luacheckrc`, `.stylua.toml` or `.github/workflows/lua.yml`, check all tracked Lua
+files so lint, formatter or tool-version changes are validated against the baseline. Deleted Lua
 files are excluded from the manifest. Configuration is parsed even when no Lua
 files changed.
 Filenames are passed as NUL-delimited data rather than shell source.
@@ -58,7 +62,7 @@ effective prototype definitions; they do not test every third-party mod combinat
 
 ## Local commands
 
-Install the versions above plus **actionlint 1.7.12** and Python 3. Run from the
+Install the versions above plus **actionlint 1.7.12**, **Ruff 0.17.3** and Python 3. Run from the
 repository root, substituting your changed Lua paths:
 
 ```sh
@@ -69,6 +73,7 @@ luacheck control.lua
 stylua --config-path .stylua.toml control.lua
 stylua --check --config-path .stylua.toml control.lua
 actionlint
+ruff check --config .ruff.toml tools
 python3 tools/test_ci_changes.py
 python3 tools/test_pullfrog_command.py
 python3 tools/test_package.py
@@ -77,7 +82,8 @@ python3 tools/validate_package.py
 ```
 
 Python CI parses every tracked `.py` file with `ast.parse` without importing
-game code. Its syntax block in `.github/workflows/python.yml` can also be run
+game code, then lints them with Ruff's default correctness rules from `.ruff.toml`
+(syntax errors, undefined names, unused imports/variables; no style rules). Its syntax block in `.github/workflows/python.yml` can also be run
 locally. Routing regressions use real Git histories, including a Lua change
 after 3,500 documentation files, unusual filenames, renames, deletions,
 missing revisions, router self-disable attempts, and both file-type transition

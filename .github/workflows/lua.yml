@@ -32,7 +32,9 @@ jobs:
         run: |
           mkdir -p .cache
           git diff --check "$BASE" HEAD
-          if [ "$EVENT_NAME" = pull_request ]; then
+          # Lint, formatter or toolchain changes recheck the whole baseline on PRs too.
+          if [ "$EVENT_NAME" = pull_request ] &&
+            git diff --quiet "$BASE" HEAD -- .luacheckrc .stylua.toml .github/workflows/lua.yml; then
             git diff --no-renames --name-only --diff-filter=ACMRT -z "$BASE" HEAD -- '*.lua' > .cache/ci-lua-files
           else
             git ls-files -z -- '*.lua' > .cache/ci-lua-files

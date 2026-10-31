@@ -15,7 +15,7 @@ def classify(paths):
             '.luacheckrc', '.stylua.toml', '.github/workflows/lua.yml'
         }:
             checks['lua'] = True
-        if path.endswith('.py') or path == '.github/workflows/python.yml':
+        if path.endswith('.py') or path in {'.ruff.toml', '.github/workflows/python.yml'}:
             checks['python'] = True
         if path in {'.github/release-please-config.json',
                     '.github/.release-please-manifest.json', '.github/version.txt'}:

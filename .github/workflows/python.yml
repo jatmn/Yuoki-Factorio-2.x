@@ -26,6 +26,17 @@ jobs:
               ast.parse(Path(name).read_bytes(), filename=name)
               print('PASS', name)
           PY
+      - name: Lint Python with Ruff
+        env:
+          RUFF_VERSION: 0.17.3
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/astral-sh/ruff/releases/download/${RUFF_VERSION}/ruff-x86_64-unknown-linux-gnu.tar.gz" \
+            -o "$RUNNER_TEMP/ruff.tar.gz"
+          echo "2b0890f5a55900af741f133918c2656919bbf18c2ab7741b4ca8403a90e647a9  $RUNNER_TEMP/ruff.tar.gz" |
+            sha256sum --check
+          tar -xzf "$RUNNER_TEMP/ruff.tar.gz" -C "$RUNNER_TEMP" --strip-components=1 ruff-x86_64-unknown-linux-gnu/ruff
+          git ls-files -z -- '*.py' | xargs -0 -r "$RUNNER_TEMP/ruff" check --no-cache --config .ruff.toml --
       - name: Test CI change routing
         run: python3 tools/test_ci_changes.py
       - name: Test Pullfrog owner authorization

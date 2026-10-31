@@ -1,0 +1,9 @@
+# Python lint for repository tooling: Ruff's default correctness rules
+# (syntax errors, undefined names, unused imports/variables). Formatting and
+# style rules are deliberately not enforced. E702 is allowed because the tests
+# chain short Git fixture commands with semicolons.
+target-version = "py312"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E702"]
