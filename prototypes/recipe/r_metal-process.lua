@@ -311,11 +311,11 @@ data:extend({
     energy_required = 3,
     ingredients = {
       { type = "item", name = "copper-ore", amount = 5 },
-      { type = "fluid", name = "water", amount = 150 },
+      { type = "fluid", name = "water", amount = 150, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y-pure-copper", amount = 3 },
-      { type = "fluid", name = "y-con_water", amount = 125 },
+      { type = "fluid", name = "y-con_water", amount = 125, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     main_product = "y-pure-copper",
     enabled = true,
@@ -333,11 +333,11 @@ data:extend({
     energy_required = 3,
     ingredients = {
       { type = "item", name = "iron-ore", amount = 5 },
-      { type = "fluid", name = "water", amount = 150 },
+      { type = "fluid", name = "water", amount = 150, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y-pure-iron", amount = 3 },
-      { type = "fluid", name = "y-con_water", amount = 125 },
+      { type = "fluid", name = "y-con_water", amount = 125, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     main_product = "y-pure-iron",
     enabled = true,
@@ -357,7 +357,7 @@ data:extend({
     ingredients = {
       { type = "item", name = "copper-ore", amount = 15 },
       { type = "item", name = "y_toolhead", amount = 1 },
-      { type = "fluid", name = "water", amount = 80 },
+      { type = "fluid", name = "water", amount = 80, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y-pure-copper", amount = 12 },
@@ -368,7 +368,7 @@ data:extend({
         ignored_by_stats = 1,
         ignored_by_productivity = 1,
       },
-      { type = "fluid", name = "y-con_water", amount = 50 },
+      { type = "fluid", name = "y-con_water", amount = 50, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     main_product = "y-pure-copper",
     allow_productivity = true,
@@ -387,7 +387,7 @@ data:extend({
     ingredients = {
       { type = "item", name = "iron-ore", amount = 15 },
       { type = "item", name = "y_toolhead", amount = 1 },
-      { type = "fluid", name = "water", amount = 80 },
+      { type = "fluid", name = "water", amount = 80, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y-pure-iron", amount = 12 },
@@ -398,7 +398,7 @@ data:extend({
         ignored_by_stats = 1,
         ignored_by_productivity = 1,
       },
-      { type = "fluid", name = "y-con_water", amount = 50 },
+      { type = "fluid", name = "y-con_water", amount = 50, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     main_product = "y-pure-iron",
     allow_productivity = true,

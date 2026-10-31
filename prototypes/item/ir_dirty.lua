@@ -162,12 +162,12 @@ data:extend({
     energy_required = 4,
     ingredients = {
       { type = "item", name = "y-dirt", amount = 10 },
-      { type = "fluid", name = "water", amount = 150 },
+      { type = "fluid", name = "water", amount = 150, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "stone", amount = 2 },
       { type = "item", name = "y-crystal2", amount = 1 },
-      { type = "fluid", name = "y-con_water", amount = 150 },
+      { type = "fluid", name = "y-con_water", amount = 150, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     main_product = "y-crystal2",
     enabled = true,
@@ -185,7 +185,7 @@ data:extend({
     energy_required = 4,
     ingredients = {
       { type = "item", name = "y-dirt", amount = 10 },
-      { type = "fluid", name = "water", amount = 300 },
+      { type = "fluid", name = "water", amount = 300, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
     results = {
       { type = "item", name = "y-c_mud", amount = 5 },

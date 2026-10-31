@@ -222,3 +222,38 @@ inventory for those modules. Disabling restrictions does not require this step.
 
 Replacement stacks that exceed the new item's stack size spill the excess next
 to their owner, preserving count and quality rather than discarding items.
+
+## Washer save and recipe regression
+
+`tests/factorio/washer-fixture/` checks the washer fluid-layout upgrade on real
+2.1.24 saves. It requires Yuoki Engines. Copy the fixture into an isolated mod
+directory as `yuoki-washer-fixture`. With Yuoki before the washer fix, create a
+save using `--create /absolute/path/washer-seed.zip`. The fixture seeds both
+washers with every owned single-fluid washing recipe, all four orientations,
+normal/rare quality where available, installed modules, input/output items,
+full fluid buffers at 75°C, and pipes on both sides.
+
+Replace Yuoki with the repaired package and change the isolated fixture's
+`info.json` version from `1.0.0` to `1.0.1` to trigger its verification callback.
+Load the seed using `--test-save /absolute/path/washer-seed.zip --test-ticks 301`.
+The fixture asserts unchanged recipes, item counts/quality, fluid amounts and
+temperatures, buffer capacities and pipe connections. It then runs Engines'
+acid-neutralization recipe through physical pipes in both washers and every
+orientation/quality, requiring exactly 20 contaminated water and 9 mechanical
+force. Each physical output port must carry its designated fluid and quantity;
+the expected side is rotated with the machine, independently of recipe filters.
+Swapping the two output connections must fail this check even when total output
+amounts are unchanged. Successful logs include `WASHER_PRESERVED` and `WASHER_PASS`.
+
+Repeat with base, Quality + Recycler, Space Age + Quality + Recycler + Elevated
+Rails, and Space Age + Recycler + Elevated Rails without Quality. Repeating the
+upgrade against the old Yuoki package preserves the seed but fails acid recipe
+selection. No fixture, save or game binary ships in the mod ZIP.
+
+The washers have two independent inputs and outputs. Existing single-fluid
+recipes explicitly select the first box and optionally share the second; this
+preserves both existing ports and saved fluid storage. Relying on automatic
+merging after changing the prototype layout clears saved internal fluids in
+2.1.24. Each independent box has volume 100, preserving the previous combined
+volume 200 per side and the existing recipe-derived buffer capacities. No Lua
+save migration or entity replacement is needed.

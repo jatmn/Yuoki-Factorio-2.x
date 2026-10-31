@@ -137,23 +137,41 @@ data:extend({
     },
     energy_usage = "350kW",
     ingredient_count = 2,
+    -- Single-fluid recipes merge each pair, retaining the original 200 volume per side.
     fluid_boxes = {
       {
-        volume = 200,
+        volume = 100,
         production_type = "input",
         pipe_covers = pipecoverspictures(),
         pipe_connections = {
           { flow_direction = "input", direction = defines.direction.north, position = { 1, -0.9 } },
+        },
+        secondary_draw_orders = { north = -1 },
+      },
+      {
+        volume = 100,
+        production_type = "output",
+        pipe_covers = pipecoverspictures(),
+        pipe_connections = {
+          { flow_direction = "output", direction = defines.direction.south, position = { 1, 0.9 } },
+        },
+        secondary_draw_orders = { north = -1 },
+      },
+      -- Append the second input/output; single-fluid recipes explicitly share both ports.
+      {
+        volume = 100,
+        production_type = "input",
+        pipe_covers = pipecoverspictures(),
+        pipe_connections = {
           { flow_direction = "input", direction = defines.direction.north, position = { -1, -0.9 } },
         },
         secondary_draw_orders = { north = -1 },
       },
       {
-        volume = 200,
+        volume = 100,
         production_type = "output",
         pipe_covers = pipecoverspictures(),
         pipe_connections = {
-          { flow_direction = "output", direction = defines.direction.south, position = { 1, 0.9 } },
           { flow_direction = "output", direction = defines.direction.south, position = { -1, 0.9 } },
         },
         secondary_draw_orders = { north = -1 },

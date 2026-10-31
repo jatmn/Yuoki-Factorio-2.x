@@ -71,9 +71,11 @@ data:extend({
     energy_required = 4,
     ingredients = {
       { type = "item", name = "y-toxic-dust", amount = 12 },
-      { type = "fluid", name = "water", amount = 20 },
+      { type = "fluid", name = "water", amount = 20, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
     },
-    results = { { type = "fluid", name = "sulfuric-acid", amount = 10 } },
+    results = {
+      { type = "fluid", name = "sulfuric-acid", amount = 10, fluidbox_index = 1, optional_fluidbox_indexes = { 2 } },
+    },
     -- icon_size = 64, icon =  "__Yuoki__/graphics/gfx/carbon_dioxide.png",
     group = "yuoki",
     subgroup = "y-fluid",
