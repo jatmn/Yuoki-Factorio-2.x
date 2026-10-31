@@ -68,17 +68,27 @@ draft remains unpublished, so they cannot propose another release using that
 unfinished release's history. Retry never substitutes newer main-branch code.
 A blank manual input resumes normal Release Please operation.
 
+Normal runs and retries have separate workflow admission groups and share one
+release job lock. A later push cannot replace an admitted retry waiting for that
+lock. Within either admission group, a newer pending run can still replace an
+older pending run; this is not a durable queue of every manual request.
+
 Do not manually publish or edit the release while its workflow is running.
 The workflow rechecks the draft status, tag and exact build commit before
 uploading assets and again before publishing, stopping if they changed.
+An existing Git tag must also resolve to that commit, including annotated tags.
+A missing tag is normal for a draft; GitHub creates it on publication.
 These checks do not lock GitHub's release UI or make the check and write atomic;
 workflow concurrency only serializes workflow runs, not manual edits.
 
 ### Abandon an unpublished release with a source defect
 
 If the recorded commit cannot build or validate, a retry cannot repair it.
-Use this maintainer-controlled recovery to propose a corrected release with
-the same unpublished version. Do not use it for a release that was published.
+Use this maintainer-controlled recovery to propose a corrected release.
+Its version is recalculated from all changes since the last published release;
+new feature or breaking changes can increase it beyond the failed version.
+The first automated release remains 1.3.1 because of `initial-version`.
+Do not use this procedure for a release that was published.
 Wait for any active Release Please run to finish and do not dispatch retries
 during recovery.
 
@@ -103,9 +113,9 @@ during recovery.
    replace the file with `{}`. If 1.3.1 was published and 1.3.2 failed, replace
    it with `{".": "1.3.1"}`. Determine that previous version from the published
    GitHub release and its tag, not from the advanced manifest or `info.json`.
-   Keep `info.json`,
-   `.github/version.txt` and the newest authored changelog section at the
-   intended unpublished version. Use a `fix:` corrective PR title and review
+   Leave `info.json`, `.github/version.txt` and the newest authored changelog
+   section at the failed version for now; step 5 reconciles the new proposal.
+   Use a `fix:` corrective PR title and review
    and merge the correction. Leave the failed draft in place during this step:
    the normal workflow is expected to stop at its unpublished-draft guard.
 4. Recheck that the failed release is still a draft at the recorded SHA, then
@@ -123,8 +133,14 @@ during recovery.
 5. Run **Release Please** manually on **main** with `retry_tag` **blank**.
    The retired PR's labels prevent replay; the restored manifest makes Release
    Please propose a new draft PR from the previous published boundary, or the
-   original bootstrap boundary for the first release. Inspect its version and
-   changelog, then mark ready and merge only when the correction is ready.
+   original bootstrap boundary for the first release. Inspect the replacement
+   PR's calculated version. For example, after published 1.3.1 and failed 1.3.2,
+   a new `feat:` can make the replacement 1.4.0. Before merging, update the
+   newest authored changelog section to that final proposed version and include
+   all unreleased changes. Verify that the PR's manifest, `info.json`, version
+   file and changelog agree; rerun release preparation on the PR checkout.
+   Recheck this agreement after further normal merges update the proposal.
+   Mark ready and merge only when the correction is ready.
    That new release PR merge supplies the new immutable packaging commit.
 
 Deleting only the draft is insufficient: leaving the advanced manifest can

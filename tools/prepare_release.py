@@ -31,7 +31,7 @@ def prepare(tag, output):
     lines = section.splitlines()
     if not lines or lines[0] != f'Version: {version}':
         raise ValueError('Newest changelog section must match the release version')
-    if not any(line.startswith('    - ') for line in lines):
+    if not any(line.startswith('    - ') and line[6:].strip() for line in lines):
         raise ValueError('Release changelog must contain authored entries')
     # Preserve historical sections and the authors' wording. GitHub uses a text
     # block because Factorio indentation has a different meaning in Markdown.

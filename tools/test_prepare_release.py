@@ -83,6 +83,44 @@ class ReleaseTests(unittest.TestCase):
             '```text\nVersion: 1.3.2\n  Fixes:\n    - Next fix.\n```\n',
         )
 
+    def test_placeholder_notes_stop_before_build(self):
+        for entry in ('', '   ', '\t'):
+            with self.subTest(entry=entry):
+                (self.root / 'changelog.txt').write_text(
+                    self.changelog.replace('Restored graphics.', entry))
+                result = self.prepare()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('must contain authored entries', result.stderr)
+                self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_repository_release_inputs_preserve_release_contract(self):
+        root = Path(__file__).resolve().parents[1]
+        config = json.loads((root / '.github/release-please-config.json').read_text())
+        self.assertIs(config['draft-pull-request'], True)
+        self.assertIs(config['draft'], True)
+        self.assertRegex(config['bootstrap-sha'], r'^[0-9a-f]{40}$')
+        self.assertEqual(set(config['packages']), {'.'})
+        package = config['packages']['.']
+        self.assertEqual(package['release-type'], 'simple')
+        self.assertEqual(package['initial-version'], '1.3.1')
+        self.assertIs(package['include-component-in-tag'], False)
+        self.assertIs(package['skip-changelog'], True)
+        self.assertEqual(package['version-file'], '.github/version.txt')
+        self.assertIn({'type': 'json', 'path': 'info.json', 'jsonpath': '$.version'},
+                      package['extra-files'])
+        self.assertNotIn('release-as', config)
+        self.assertNotIn('release-as', package)
+        manifest = json.loads((root / '.github/.release-please-manifest.json').read_text())
+        self.assertIsInstance(manifest, dict)
+        self.assertIn(set(manifest), (set(), {'.'}))
+        version = (root / '.github/version.txt').read_text().strip()
+        self.assertEqual(version, json.loads((root / 'info.json').read_text())['version'])
+        # Manifest can be empty for bootstrap, or older during abandonment.
+        for value in [version, *manifest.values()]:
+            self.assertRegex(value, r'^[0-9]+\.[0-9]+\.[0-9]+$')
+            self.assertNotEqual(value, '0.0.0')
+            self.assertTrue(all(int(part) <= 65535 for part in value.split('.')))
+
     def test_unpublished_draft_stops_normal_workflow_before_release_please(self):
         workflow = (Path(__file__).resolve().parents[1] /
                     '.github/workflows/release-please.yml').read_text()
@@ -150,6 +188,20 @@ class ReleaseTests(unittest.TestCase):
             log = pathlib.Path(os.environ['CALLS'])
             calls = json.loads(log.read_text())
             args = sys.argv[1:]
+            if args == ['api', 'repos/fixture/fixture/git/matching-refs/tags/v1.3.1']:
+                state = json.loads(os.environ['TAG_REFS'])[calls.count('refs')]
+                if isinstance(state, int):
+                    sys.exit(state)
+                print(json.dumps(state))
+                log.write_text(json.dumps(calls + ['refs']))
+                sys.exit(0)
+            if args == ['api', 'repos/fixture/fixture/commits/refs/tags/v1.3.1', '--jq', '.sha']:
+                state = json.loads(os.environ['TAG_COMMITS'])[calls.count('commit')]
+                if isinstance(state, int):
+                    sys.exit(state)
+                print(state)
+                log.write_text(json.dumps(calls + ['commit']))
+                sys.exit(0)
             expected = {
                 'view': ['release', 'view', 'v1.3.1', '--json', 'isDraft,targetCommitish,tagName'],
                 'upload': ['release', 'upload', 'v1.3.1', 'build/dist/Yuoki_1.3.1.zip',
@@ -168,21 +220,38 @@ class ReleaseTests(unittest.TestCase):
             log.write_text(json.dumps(calls))
             '''))
         cli.chmod(0o755)
-        cases = [([draft, draft], ['view', 'upload', 'view', 'edit'], 0)]
+        cases = [([draft, draft], ['view', 'refs', 'upload', 'view', 'refs', 'edit'], 0)]
         for changed in ({**draft, 'isDraft': False}, {**draft, 'targetCommitish': 'b' * 40},
                         {**draft, 'tagName': 'v1.3.2'}, 42):
             cases.append(([changed], [] if changed == 42 else ['view'], 42 if changed == 42 else 1))
-            cases.append(([draft, changed], ['view', 'upload'] + ([] if changed == 42 else ['view']),
+            cases.append(([draft, changed], ['view', 'refs', 'upload'] + ([] if changed == 42 else ['view']),
                           42 if changed == 42 else 1))
-        for states, expected_calls, expected_exit in cases:
-            with self.subTest(states=states):
+        # A missing tag is normal for drafts. Prefix matches must not count.
+        prefix = [{'ref': 'refs/tags/v1.3.10'}]
+        matching = [{'ref': 'refs/tags/v1.3.1', 'object': {'type': 'commit', 'sha': sha}}]
+        annotated = [{'ref': 'refs/tags/v1.3.1', 'object': {'type': 'tag', 'sha': 'c' * 40}}]
+        tag_cases = [([prefix, prefix], [], ['view', 'refs', 'upload', 'view', 'refs', 'edit'], 0)]
+        for refs in (matching, annotated):
+            tag_cases.extend([
+                ([refs, refs], [sha, sha], ['view', 'refs', 'commit', 'upload', 'view', 'refs', 'commit', 'edit'], 0),
+                ([refs], ['b' * 40], ['view', 'refs', 'commit'], 1),
+                ([[], refs], ['b' * 40], ['view', 'refs', 'upload', 'view', 'refs', 'commit'], 1),
+                ([refs], [42], ['view', 'refs'], 42),
+            ])
+        tag_cases.extend([([42], [], ['view'], 42), ([[], 42], [], ['view', 'refs', 'upload', 'view'], 42)])
+        all_cases = [(states, [[], []], [], calls, code) for states, calls, code in cases]
+        all_cases += [([draft, draft], refs, commits, calls, code)
+                      for refs, commits, calls, code in tag_cases]
+        for states, refs, commits, expected_calls, expected_exit in all_cases:
+            with self.subTest(states=states, refs=refs, commits=commits):
                 calls.write_text('[]')
                 result = subprocess.run(
                     ['bash', '-e', '-o', 'pipefail', '-c', script], cwd=self.root,
                     capture_output=True, text=True,
                     env={**os.environ, 'PATH': str(self.workspace) + os.pathsep + os.environ['PATH'],
                          'TAG': 'v1.3.1', 'RELEASE_SHA': sha, 'RUNNER_TEMP': str(self.workspace),
-                         'CALLS': str(calls), 'STATES': json.dumps(states)},
+                         'CALLS': str(calls), 'STATES': json.dumps(states), 'GH_REPO': 'fixture/fixture',
+                         'TAG_REFS': json.dumps(refs), 'TAG_COMMITS': json.dumps(commits)},
                 )
                 self.assertEqual(result.returncode, expected_exit, result.stderr)
                 self.assertEqual(json.loads(calls.read_text()), expected_calls)
