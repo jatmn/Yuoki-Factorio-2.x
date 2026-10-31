@@ -11,13 +11,6 @@ data:extend({
   --
   {
     type = "bool-setting",
-    name = "yuoki-prod-mod-behaviour",
-    setting_type = "startup",
-    default_value = true,
-    order = "b",
-  },
-  {
-    type = "bool-setting",
     name = "yuoki-start-with-yi-suit",
     setting_type = "startup",
     default_value = false,

@@ -750,22 +750,14 @@ end
 
 -- Wrap the quality multiplier in a function or a safe check
 function yi.lib.get_quality_multiplier()
-  -- Safe check for 2.0 prototypes global
-  local is_space_age = false
-  if _G["prototypes"] and prototypes.item["quality-module"] then
-    is_space_age = true
+  local multipliers = { normal = 1, uncommon = 1.15, rare = 1.25, epic = 1.35, legendary = 1.45 }
+  local result = {}
+  for name, multiplier in pairs(multipliers) do
+    if data and data.raw.quality[name] then
+      result[name] = multiplier
+    end
   end
-
-  if is_space_age then
-    return {
-      normal = 1,
-      uncommon = 1.15,
-      rare = 1.25,
-      epic = 1.35,
-      legendary = 1.45,
-    }
-  end
-  return { normal = 1 }
+  return result
 end
 
 -- Update the variable using the safe function
@@ -783,11 +775,60 @@ function yi.lib.migration.bulk_replace(replacement_table)
   yi.lib.migration.remove_unknown_ghosts()
 end
 
--- Global item migration function for Factorio 2.0
--- Handles ground, inventories, belts, filters, and active recipes.
+-- Replace stacks in place: transport-line insertion only restores one belt position.
+local function replace_stack(stack, old_name, new_name, owner)
+  if not stack or not stack.valid_for_read or stack.name ~= old_name then
+    return
+  end
+  local count, quality = stack.count, stack.quality
+  assert(
+    stack.set_stack({ name = new_name, count = count, quality = quality }),
+    "Yuoki migration: stack replacement failed"
+  )
+  -- A replacement with a smaller stack size must not silently discard the excess.
+  local excess = count - stack.count
+  if excess > 0 then
+    local spilled = owner.surface.spill_item_stack({
+      position = owner.position,
+      stack = { name = new_name, count = excess, quality = quality },
+      enable_looted = true,
+      force = owner.force,
+      allow_belts = false,
+    })
+    local recovered = 0
+    for _, entity in pairs(spilled) do
+      recovered = recovered + entity.stack.count
+    end
+    assert(recovered == excess, "Yuoki migration: could not preserve excess items")
+  end
+end
+
+local function replace_filter(filter, old_name, new_name)
+  if filter and filter.name == old_name then
+    filter.name = new_name
+    return filter
+  end
+end
+
+local function replace_requests(logistic_point, old_name, new_name)
+  if not logistic_point then
+    return
+  end
+  for _, section in pairs(logistic_point.sections) do
+    if section.is_manual then
+      for j = 1, section.filters_count do
+        local filter = section.get_slot(j)
+        if filter and filter.value and replace_filter(filter.value, old_name, new_name) then
+          section.set_slot(j, filter)
+        end
+      end
+    end
+  end
+end
+
+-- Handles ground stacks, belt positions, inventories, inserter hands and filters.
 function yi.lib.migration.global_replace_item(old_name, new_name)
-  local new_prototype = prototypes.item[new_name]
-  if not new_prototype then
+  if not prototypes.item[new_name] then
     log("Migration Error: Target item " .. new_name .. " does not exist.")
     return
   end
@@ -812,22 +853,9 @@ function yi.lib.migration.global_replace_item(old_name, new_name)
         "construction-robot",
       },
     })
-
     for _, entity in ipairs(entities) do
-      -- A. Items on Ground
       if entity.type == "item-entity" then
-        if entity.stack and entity.stack.valid_for_read and entity.stack.name == old_name then
-          local pos = entity.position
-          local count = entity.stack.count
-          entity.destroy()
-          surface.create_entity({
-            name = "item-on-ground",
-            stack = { name = new_name, count = count },
-            position = pos,
-          })
-        end
-
-      -- B. Check Transport Belts / Splitters / Loaders
+        replace_stack(entity.stack, old_name, new_name, entity)
       elseif
         entity.type == "transport-belt"
         or entity.type == "underground-belt"
@@ -835,106 +863,56 @@ function yi.lib.migration.global_replace_item(old_name, new_name)
         or entity.type == "loader"
         or entity.type == "loader-1x1"
       then
-        local line_count = entity.get_max_transport_line_index()
-        for i = 1, line_count do
+        for i = 1, entity.get_max_transport_line_index() do
           local line = entity.get_transport_line(i)
-          local count = line.get_item_count(old_name)
-          if count > 0 then
-            line.remove_item({ name = old_name, count = count })
-            line.insert_at_back({ name = new_name, count = count })
+          for j = 1, #line do
+            replace_stack(line[j], old_name, new_name, entity)
           end
         end
-
         if entity.type == "splitter" then
-          -- 1. Clear stuck items in the internal buffer
-          for i = 1, 2 do
-            local inv = entity.get_inventory(i)
-            if inv and inv.valid then
-              local count = inv.get_item_count(old_name)
-              if count > 0 then
-                inv.remove({ name = old_name, count = count })
-                inv.insert({ name = new_name, count = count })
-              end
-            end
-          end
-
-          -- 2. Update the Filter
-          -- In 2.0, the engine treats the filter as a "SignalID"
-          if entity.splitter_filter and entity.splitter_filter.name == old_name then
-            local side = entity.splitter_output_priority
-            entity.splitter_filter = nil -- Reset first
-            -- Use the most basic 2.0 compatible table
-            entity.splitter_filter = { type = "item", name = new_name }
-            entity.splitter_output_priority = side
+          local filter = replace_filter(entity.splitter_filter, old_name, new_name)
+          if filter then
+            entity.splitter_filter = filter
           end
         end
-
-      -- C. Inserter Filters
       elseif entity.type == "inserter" then
+        replace_stack(entity.held_stack, old_name, new_name, entity)
         for slot = 1, entity.filter_slot_count do
-          if entity.get_filter(slot) == old_name then
-            entity.set_filter(slot, new_name)
+          local filter = replace_filter(entity.get_filter(slot), old_name, new_name)
+          if filter then
+            entity.set_filter(slot, filter)
           end
         end
-
-      -- D. Logistic Containers
       elseif entity.type == "logistic-container" then
         if entity.prototype.logistic_mode == "storage" then
-          if entity.storage_filter and entity.storage_filter.name == old_name then
-            entity.storage_filter = new_prototype
+          local filter = replace_filter(entity.storage_filter, old_name, new_name)
+          if filter then
+            entity.storage_filter = filter
           end
         end
-
-        local logic_point = entity.get_logistic_point(0)
-        if logic_point then
-          for i = 1, logic_point.sections_count do
-            local section = logic_point.get_section(i)
-            if section then
-              for j = 1, section.filters_count do
-                local filter = section.get_slot(j)
-                if filter and filter.value and filter.value.name == old_name then
-                  section.set_slot(j, { value = new_name, min = filter.min, max = filter.max })
-                end
-              end
-            end
-          end
-        end
+        replace_requests(entity.get_logistic_point(0), old_name, new_name)
       end
 
-      -- E. Inventory Scrub
       for i = 1, entity.get_max_inventory_index() do
-        local inv = entity.get_inventory(i)
-        if inv and inv.valid then
-          local count = inv.get_item_count(old_name)
-          if count > 0 then
-            local removed = inv.remove({ name = old_name, count = count })
-            inv.insert({ name = new_name, count = removed })
+        local inventory = entity.get_inventory(i)
+        if inventory and inventory.valid then
+          for slot = 1, #inventory do
+            if inventory.supports_filters() then
+              local filter = replace_filter(inventory.get_filter(slot), old_name, new_name)
+              if filter then
+                inventory.set_filter(slot, filter)
+              end
+            end
+            replace_stack(inventory[slot], old_name, new_name, entity)
           end
         end
       end
     end
   end
-
-  -- F. Player Hand and Logistics
   for _, player in pairs(game.players) do
-    if player.cursor_stack and player.cursor_stack.valid_for_read and player.cursor_stack.name == old_name then
-      player.cursor_stack.set_stack({ name = new_name, count = player.cursor_stack.count })
-    end
+    replace_stack(player.cursor_stack, old_name, new_name, player)
     if player.character then
-      local lp = player.character.get_logistic_point(0)
-      if lp then
-        for i = 1, lp.sections_count do
-          local section = lp.get_section(i)
-          if section then
-            for j = 1, section.filters_count do
-              local f = section.get_slot(j)
-              if f and f.value and f.value.name == old_name then
-                section.set_slot(j, { value = new_name, min = f.min, max = f.max })
-              end
-            end
-          end
-        end
-      end
+      replace_requests(player.character.get_logistic_point(0), old_name, new_name)
     end
   end
 end
@@ -965,20 +943,20 @@ function yi.lib.migration.global_replace_fluid(old_name, new_name)
     })
 
     for _, entity in ipairs(entities) do
-      -- Loop through all fluidboxes in the entity
-      for i = 1, #entity.fluidbox do
-        local box = entity.fluidbox[i]
-        if box and box.name == old_name then
-          -- Store the amount and temperature
-          local amount = box.amount
-          local temp = box.temperature
-
-          -- Replace the fluid
-          entity.fluidbox[i] = {
-            name = new_name,
-            amount = amount,
-            temperature = temp,
-          }
+      for i = 1, entity.fluids_count do
+        local segmented = entity.has_fluid_segment(i)
+        local fluid = segmented and entity.get_fluid_segment_fluid(i) or entity.get_fluid(i)
+        if fluid and fluid.name == old_name then
+          local filter = segmented and entity.get_fluid_segment_filter(i) or entity.get_fluid_filter(i)
+          assert(not filter or filter.name == new_name, "Yuoki migration: incompatible fluid filter")
+          local replacement = { name = new_name, amount = fluid.amount, temperature = fluid.temperature }
+          local amount
+          if segmented then
+            amount = entity.set_fluid_segment_fluid(i, replacement)
+          else
+            amount = entity.set_fluid(i, replacement)
+          end
+          assert(amount == fluid.amount, "Yuoki migration: fluid replacement was incomplete")
         end
       end
     end
@@ -995,21 +973,9 @@ function yi.lib.migration.fix_splitters(old_name, new_name)
   for _, surface in pairs(game.surfaces) do
     local splitters = surface.find_entities_filtered({ type = "splitter" })
     for _, splitter in ipairs(splitters) do
-      -- Check if the filter is set to the old item
-      if splitter.splitter_filter and splitter.splitter_filter.name == old_name then
-        -- 1. Store the exact priority state
-        local current_priority = splitter.splitter_output_priority
-
-        -- 2. Clear both to "unlock" the state
-        splitter.splitter_output_priority = "none"
-        splitter.splitter_filter = nil
-
-        -- 3. Set the new item
-        splitter.splitter_filter = new_proto
-
-        -- 4. Re-apply the priority (e.g., "right")
-        -- This order is critical in 2.0 to force the UI to update
-        splitter.splitter_output_priority = current_priority
+      local filter = replace_filter(splitter.splitter_filter, old_name, new_name)
+      if filter then
+        splitter.splitter_filter = filter
       end
     end
   end
@@ -1022,24 +988,6 @@ function yi.lib.migration.remove_unknown_ghosts()
     for _, ghost in ipairs(ghosts) do
       if not ghost.ghost_prototype then
         ghost.destroy()
-      end
-    end
-
-    local combinators = surface.find_entities_filtered({ type = "constant-combinator" })
-    for _, entity in ipairs(combinators) do
-      local control = entity.get_control_behavior()
-      if control then
-        for i = 1, control.sections_count do
-          local section = control.get_section(i)
-          if section then
-            for j = 1, section.filters_count do
-              local slot = section.get_slot(j)
-              if slot and slot.value and slot.value.name and not prototypes.item[slot.value.name] then
-                section.clear_slot(j)
-              end
-            end
-          end
-        end
       end
     end
   end
