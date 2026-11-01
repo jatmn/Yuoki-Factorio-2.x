@@ -1,5 +1,5 @@
 -- luacheck: globals data
--- luacheck: read globals yi
+-- luacheck: read globals yi feature_flags
 -- Data-stage regression for the shared atomics recipe API. Any failure stops loading.
 local atomics = yi.lib.recipe.atomics
 
@@ -42,22 +42,28 @@ local function full_tier(material, material_type, amount, direction, subgroup)
   }
 end
 
--- Runs a registration and checks that exactly the listed recipe IDs were added.
-local function adds(expected_names, register)
+-- Runs a registration and checks that exactly the listed recipe IDs were registered.
+-- data:extend stores each new table, so replacing an existing ID counts; removals count too.
+local function registers(expected_names, register)
   local before = {}
-  for name in pairs(data.raw.recipe) do
-    before[name] = true
+  for name, recipe in pairs(data.raw.recipe) do
+    before[name] = recipe
   end
   local results = { register() }
-  local added = {}
-  for name in pairs(data.raw.recipe) do
-    if not before[name] then
-      added[#added + 1] = name
+  local changed = {}
+  for name, recipe in pairs(data.raw.recipe) do
+    if before[name] ~= recipe then
+      changed[#changed + 1] = name
     end
   end
-  table.sort(added)
+  for name in pairs(before) do
+    if data.raw.recipe[name] == nil then
+      changed[#changed + 1] = name
+    end
+  end
+  table.sort(changed)
   table.sort(expected_names)
-  same(added, expected_names, "added recipes")
+  same(changed, expected_names, "registered recipes")
   return table.unpack(results)
 end
 
@@ -67,21 +73,23 @@ data:extend({
   { type = "surface-property", name = "yuoki-test-industry", default_value = 1 },
 })
 
--- Existing item call from Yuoki itself, then the same positional call returning both recipes in order.
+-- Existing item call from Yuoki itself, then the same positional call re-registering and
+-- returning both recipes in order.
 local stone_down = full_tier("stone", "item", 20, "down", "j-y-atomics-2")
 local stone_up = full_tier("stone", "item", 20, "up", "j-y-atomics-11")
 same(data.raw.recipe["y-ac-stone2uc"], stone_down, "y-ac-stone2uc")
 same(data.raw.recipe["y-ac-uc2stone"], stone_up, "y-ac-uc2stone")
-local first, second = adds({}, function()
+local first, second = registers({ "y-ac-stone2uc", "y-ac-uc2stone" }, function()
   return atomics.recipes_make_item("stone", 64, 20, 1, "ore")
 end)
 same(first, stone_down, "recipes_make_item first")
 same(second, stone_up, "recipes_make_item second")
+assert(data.raw.recipe["y-ac-stone2uc"] == first and data.raw.recipe["y-ac-uc2stone"] == second)
 
 -- Existing fluid call with a subgroup.
 local water_down = full_tier("water", "fluid", 100, "down", "j-y-atomics-7")
 local water_up = full_tier("water", "fluid", 100, "up", "j-y-atomics-14")
-first, second = adds({ "y-ac-water2uc", "y-ac-uc2water" }, function()
+first, second = registers({ "y-ac-water2uc", "y-ac-uc2water" }, function()
   return atomics.recipes_make_fluid("water", 64, 100, 1, "fluid")
 end)
 same(first, water_down, "recipes_make_fluid first")
@@ -89,7 +97,12 @@ same(second, water_up, "recipes_make_fluid second")
 assert(data.raw.recipe["y-ac-water2uc"] == first and data.raw.recipe["y-ac-uc2water"] == second)
 
 -- One-way primitive stone -> solid UC in a caller-selected category.
-local primitive = adds({ "yuoki-test-stone-to-uc" }, function()
+-- Factorio rejects recipe surface_conditions unless space travel is enabled (e.g. Space Age).
+local surface_conditions
+if feature_flags.space_travel then
+  surface_conditions = { { property = "yuoki-test-industry", min = 1, max = 1 } }
+end
+local primitive = registers({ "yuoki-test-stone-to-uc" }, function()
   return atomics.make_recipe("stone", "down", {
     size = 64,
     amount = 40,
@@ -102,7 +115,7 @@ local primitive = adds({ "yuoki-test-stone-to-uc" }, function()
       order = "z",
       localised_name = { "recipe-name.yuoki-test-stone-to-uc" },
       localised_description = { "recipe-description.yuoki-test-stone-to-uc" },
-      surface_conditions = { { property = "yuoki-test-industry", min = 1, max = 1 } },
+      surface_conditions = surface_conditions,
       allow_productivity = false,
     },
   })
@@ -121,7 +134,7 @@ local expected_primitive = {
   main_product = "y-unicomp-a2",
   subgroup = "j-y-atomics-2",
   categories = { "yuoki-test-primitive" },
-  surface_conditions = { { property = "yuoki-test-industry", min = 1, max = 1 } },
+  surface_conditions = surface_conditions,
   icons = atomics.item_down("stone", 64),
   auto_recycle = false,
   allow_quality = false,
@@ -130,7 +143,7 @@ local expected_primitive = {
 same(primitive, expected_primitive, "primitive stone")
 
 -- Liquid UC -> water: directional icon, fluid input kept, no reverse recipe.
-local water = adds({ "yuoki-test-water" }, function()
+local water = registers({ "yuoki-test-water" }, function()
   return atomics.make_recipe("water", "up", {
     material_type = "fluid",
     amount = 100,
@@ -151,6 +164,9 @@ same(data.raw.recipe["y-ac-uc2stone"], stone_up, "y-ac-uc2stone after primitive"
 same(data.raw.recipe["y-ac-water2uc"], water_down, "y-ac-water2uc after primitive")
 same(data.raw.recipe["y-ac-uc2water"], water_up, "y-ac-uc2water after primitive")
 
-local ok = pcall(atomics.make_recipe, "stone", "sideways")
+-- An invalid direction raises before registering, adding, or replacing anything.
+local ok = registers({}, function()
+  return pcall(atomics.make_recipe, "stone", "sideways")
+end)
 assert(not ok, "invalid direction must fail")
 log("ATOMICS_PASS")

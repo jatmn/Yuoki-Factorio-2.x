@@ -263,11 +263,17 @@ save migration or entity replacement is needed.
 `tests/factorio/atomics-fixture/` is a developer-only data-stage check for
 `yi.lib.recipe.atomics`. Copy it into an isolated mod directory as
 `yuoki-atomics-fixture`, enable it with base and Yuoki, and load the data stage,
-for example with `--dump-data`. Any failed assertion stops loading; success logs
-`ATOMICS_PASS` to `factorio-current.log`.
+for example with `--dump-data`. Repeat with Space Age + Quality + Recycler +
+Elevated Rails enabled. Any failed assertion stops loading. The fixture logs
+`ATOMICS_PASS` to `factorio-current.log` at the end of its data stage, before
+Factorio validates prototypes, so a run passes only when the log also reports
+`Factorio initialised` and the command exits 0.
 
-It checks that Yuoki's existing stone conversions and a positional
-`recipes_make_fluid` call keep their exact prototypes, IDs and return order, and
-that one-way `make_recipe` calls for stone (in a fixture category) and liquid
-unicomp to water add only their own recipe, keep the caller's fields and leave
-the full-tier pairs unchanged.
+It checks that a positional `recipes_make_item` call for stone, replacing
+Yuoki's identical pair, and a positional `recipes_make_fluid` call register and
+return their exact prototypes, IDs and order, and that one-way `make_recipe`
+calls for stone (in a fixture category) and liquid unicomp to water register
+only their own recipe, keep the caller's fields and leave the full-tier pairs
+unchanged. An invalid direction must fail without registering or replacing any
+recipe. Factorio accepts recipe `surface_conditions` only with space travel
+enabled, so the stone recipe supplies and checks them only in the Space Age run.
