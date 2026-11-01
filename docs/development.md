@@ -257,3 +257,17 @@ merging after changing the prototype layout clears saved internal fluids in
 2.1.24. Each independent box has volume 100, preserving the previous combined
 volume 200 per side and the existing recipe-derived buffer capacities. No Lua
 save migration or entity replacement is needed.
+
+## Atomics recipe API regression
+
+`tests/factorio/atomics-fixture/` is a developer-only data-stage check for
+`yi.lib.recipe.atomics`. Copy it into an isolated mod directory as
+`yuoki-atomics-fixture`, enable it with base and Yuoki, and load the data stage,
+for example with `--dump-data`. Any failed assertion stops loading; success logs
+`ATOMICS_PASS` to `factorio-current.log`.
+
+It checks that Yuoki's existing stone conversions and a positional
+`recipes_make_fluid` call keep their exact prototypes, IDs and return order, and
+that one-way `make_recipe` calls for stone (in a fixture category) and liquid
+unicomp to water add only their own recipe, keep the caller's fields and leave
+the full-tier pairs unchanged.

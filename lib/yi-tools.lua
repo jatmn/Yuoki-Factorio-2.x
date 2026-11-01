@@ -512,6 +512,67 @@ function yi.lib.recipe.atomics.fluid_up(icon_name, size)
   return generate_atomics_icon(icon_name, "up", size)
 end
 
+-- Builds and registers one atomics conversion recipe, returning it.
+-- Only the requested direction is registered; no reverse recipe is created.
+-- Usage: yi.lib.recipe.atomics.make_recipe("stone", "down", {
+--          amount = 40,
+--          fields = { name = "my-stone-to-uc", categories = { "my-category" }, energy_required = 8 },
+--        })
+--      stone       - item or fluid name converted to or from Unicomp
+--      down        - "down" makes material -> Unicomp (down arrow),
+--                    "up" makes Unicomp -> material (up arrow)
+--      options     - optional table:
+--        material_type   - "item" (default) or "fluid"
+--        size            - icon size of existing material (default 64)
+--        amount          - how many units of material (default 20)
+--        unicomp         - Unicomp ingredient/result name (default "y-unicomp-a2")
+--        unicomp_type    - "item" (default) or "fluid", e.g. for "y-liquid-uc2"
+--        unicomp_amount  - how many units of Unicomp (default 1)
+--        fields          - recipe prototype fields applied last, replacing the y-ac-* defaults:
+--                          name, categories, subgroup, order, energy_required, enabled,
+--                          localised_name, localised_description, surface_conditions, flags...
+--                          Give other tiers a distinct name; the default y-ac-* name replaces Yuoki's recipe.
+function yi.lib.recipe.atomics.make_recipe(material, direction, options)
+  local opts = options or {}
+  local material_type = opts.material_type or "item"
+  local unicomp = opts.unicomp or "y-unicomp-a2"
+  local material_io = { type = material_type, name = material, amount = opts.amount or 20 }
+  local unicomp_io = { type = opts.unicomp_type or "item", name = unicomp, amount = opts.unicomp_amount or 1 }
+  local material_name = { material_type .. "-name." .. material }
+
+  local recipe = {
+    type = "recipe",
+    order = "a",
+    energy_required = 2,
+    enabled = true,
+    categories = { "yuoki-atomics" },
+    icons = generate_atomics_icon(material, direction, opts.size),
+    auto_recycle = false,
+    allow_quality = false,
+  }
+  if direction == "down" then
+    recipe.name = "y-ac-" .. material .. "2uc"
+    recipe.localised_name = { "recipe-name.y-ac", material_name }
+    recipe.ingredients = { material_io }
+    recipe.results = { unicomp_io }
+    recipe.main_product = unicomp
+  elseif direction == "up" then
+    recipe.name = "y-ac-uc2" .. material
+    recipe.localised_name = { "recipe-name.y-ac-uc2", material_name }
+    recipe.ingredients = { unicomp_io }
+    recipe.results = { material_io }
+    recipe.main_product = material
+  else
+    error('Atomics recipe direction must be "down" or "up", got ' .. tostring(direction))
+  end
+  for key, value in pairs(opts.fields or {}) do
+    recipe[key] = value
+  end
+
+  data:extend({ recipe })
+  return recipe
+end
+
 -- Used to make atomics recipes
 -- Usage: yi.lib.recipe.atomics.recipes_make_item("iron-ore", 64, 10, 1, "ore")
 --      iron-ore    - item name you want to use for the recipe
@@ -520,11 +581,9 @@ end
 --      1           - how many units of Unicomp is the results (usually this is 1)
 --      ore         - sub_group classification this is optional..
 --                      (Values: ore, ore-space-age, ore-int)
+-- Registers and returns item -> Unicomp, then Unicomp -> item.
+-- Use make_recipe for a single direction, recipe ID or crafting category.
 function yi.lib.recipe.atomics.recipes_make_item(icon_name, size, item_amount, uni_amount, sub_group)
-  local item_n = icon_name
-  local item_amt = item_amount or 20
-  local unicomp = uni_amount or 1
-
   local groups = {
     ["ore"] = { g1 = "j-y-atomics-2", g2 = "j-y-atomics-11" },
     ["ore-space-age"] = { g1 = "j-y-atomics-3", g2 = "j-y-atomics-12" },
@@ -533,40 +592,11 @@ function yi.lib.recipe.atomics.recipes_make_item(icon_name, size, item_amount, u
   }
   local selected = groups[sub_group] or groups["default"]
 
-  local item_recipe = {
-    type = "recipe",
-    name = "y-ac-" .. item_n .. "2uc",
-    localised_name = { "recipe-name.y-ac", { "item-name." .. item_n } },
-    order = "a",
-    energy_required = 2,
-    enabled = true,
-    ingredients = { { type = "item", name = item_n, amount = item_amt } },
-    results = { { type = "item", name = "y-unicomp-a2", amount = unicomp } },
-    main_product = "y-unicomp-a2",
-    subgroup = selected.g1,
-    categories = { "yuoki-atomics" },
-    icons = yi.lib.recipe.atomics.item_down(item_n, size),
-    auto_recycle = false,
-    allow_quality = false,
-  }
-  local uni_recipe = {
-    type = "recipe",
-    name = "y-ac-uc2" .. item_n,
-    localised_name = { "recipe-name.y-ac-uc2", { "item-name." .. item_n } },
-    order = "a",
-    energy_required = 2.0,
-    enabled = true,
-    ingredients = { { type = "item", name = "y-unicomp-a2", amount = unicomp } },
-    results = { { type = "item", name = item_n, amount = item_amt } },
-    main_product = item_n,
-    subgroup = selected.g2,
-    categories = { "yuoki-atomics" },
-    icons = yi.lib.recipe.atomics.item_up(item_n, size),
-    auto_recycle = false,
-    allow_quality = false,
-  }
-
-  data:extend({ item_recipe, uni_recipe })
+  local options = { size = size, amount = item_amount, unicomp_amount = uni_amount }
+  options.fields = { subgroup = selected.g1 }
+  local item_recipe = yi.lib.recipe.atomics.make_recipe(icon_name, "down", options)
+  options.fields = { subgroup = selected.g2 }
+  local uni_recipe = yi.lib.recipe.atomics.make_recipe(icon_name, "up", options)
   return item_recipe, uni_recipe
 end
 
@@ -578,11 +608,9 @@ end
 --      1           - how many units of Unicomp is the results (usually this is 1)
 --      fluid       - sub_group classification this is optional..
 --                      (Values: fluid, fluid-space-age, fluid-int)
+-- Registers and returns fluid -> Unicomp, then Unicomp -> fluid.
+-- Use make_recipe for a single direction, recipe ID or crafting category.
 function yi.lib.recipe.atomics.recipes_make_fluid(icon_name, size, item_amount, uni_amount, sub_group)
-  local item_n = icon_name
-  local item_amt = item_amount or 20
-  local unicomp = uni_amount or 1
-
   local groups = {
     ["fluid"] = { g1 = "j-y-atomics-7", g2 = "j-y-atomics-14" },
     ["fluid-space-age"] = { g1 = "j-y-atomics-8", g2 = "j-y-atomics-14" },
@@ -591,40 +619,11 @@ function yi.lib.recipe.atomics.recipes_make_fluid(icon_name, size, item_amount, 
   }
   local selected = groups[sub_group] or groups["default"]
 
-  local item_recipe = {
-    type = "recipe",
-    name = "y-ac-" .. item_n .. "2uc",
-    localised_name = { "recipe-name.y-ac", { "fluid-name." .. item_n } },
-    order = "a",
-    energy_required = 2,
-    enabled = true,
-    ingredients = { { type = "fluid", name = item_n, amount = item_amt } },
-    results = { { type = "item", name = "y-unicomp-a2", amount = unicomp } },
-    main_product = "y-unicomp-a2",
-    subgroup = selected.g1,
-    categories = { "yuoki-atomics" },
-    icons = yi.lib.recipe.atomics.fluid_down(item_n, size),
-    auto_recycle = false,
-    allow_quality = false,
-  }
-  local uni_recipe = {
-    type = "recipe",
-    name = "y-ac-uc2" .. item_n,
-    localised_name = { "recipe-name.y-ac-uc2", { "fluid-name." .. item_n } },
-    order = "a",
-    energy_required = 2.0,
-    enabled = true,
-    ingredients = { { type = "item", name = "y-unicomp-a2", amount = unicomp } },
-    results = { { type = "fluid", name = item_n, amount = item_amt } },
-    main_product = item_n,
-    subgroup = selected.g2,
-    categories = { "yuoki-atomics" },
-    icons = yi.lib.recipe.atomics.fluid_up(item_n, size),
-    auto_recycle = false,
-    allow_quality = false,
-  }
-
-  data:extend({ item_recipe, uni_recipe })
+  local options = { material_type = "fluid", size = size, amount = item_amount, unicomp_amount = uni_amount }
+  options.fields = { subgroup = selected.g1 }
+  local item_recipe = yi.lib.recipe.atomics.make_recipe(icon_name, "down", options)
+  options.fields = { subgroup = selected.g2 }
+  local uni_recipe = yi.lib.recipe.atomics.make_recipe(icon_name, "up", options)
   return item_recipe, uni_recipe
 end
 

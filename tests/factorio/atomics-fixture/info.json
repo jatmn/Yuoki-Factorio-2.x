@@ -1,0 +1,8 @@
+{
+  "name": "yuoki-atomics-fixture",
+  "version": "1.0.0",
+  "title": "Yuoki atomics recipe regression fixture",
+  "author": "Yuoki contributors",
+  "factorio_version": "2.1",
+  "dependencies": ["base", "Yuoki"]
+}
