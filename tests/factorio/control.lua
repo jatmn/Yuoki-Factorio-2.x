@@ -278,6 +278,17 @@ script.on_init(function()
       end
     end
   end)
+  check("cimota rotation", function(surface)
+    -- A Cimota without a recipe keeps the direction it was built with.
+    local east = defines.direction.east
+    local cimota = surface.create_entity({
+      name = "y-atomic-constructor",
+      position = { 0.5, 0.5 },
+      direction = east,
+      force = "player",
+    })
+    assert(cimota and not cimota.get_recipe() and cimota.direction == east, "recipe-less Cimota keeps its direction")
+  end)
   local surface = game.create_surface("generator-test", { width = 512, height = 128 })
   surface.request_to_generate_chunks({ 0, 0 }, 4)
   surface.force_generate_chunk_requests()
