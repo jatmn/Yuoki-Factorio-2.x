@@ -123,7 +123,8 @@ The separate [Pullfrog workflow](pullfrog.md) retains its owner-command policy.
 
 `tests/factorio/control.lua` runs the production migration helpers against real
 engine stacks, inventories, filters, logistics, circuits and connected fluids.
-It also checks quality energy multipliers, the pump module slot, and all ten
+It also checks quality energy multipliers, the pump module slot, that a
+recipe-less Cimota Restructor keeps its build direction, and all ten
 generators below and above their minimum input temperatures. Failures produce
 `FAIL` log lines and a failing test result. Run with base + Yuoki, then repeat
 with Quality, Space Age + Quality, and Space Age without Quality.

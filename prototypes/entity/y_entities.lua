@@ -412,8 +412,6 @@ data:extend({
         production_type = "input",
         pipe_picture = assembler_pictures.assembler2pipepictures,
         pipe_covers = pipecoverspictures(),
-        base_area = 10,
-        base_level = -1,
         pipe_connections = {
           { flow_direction = "input", direction = defines.direction.north, position = { 0, -1 } },
         },
@@ -424,15 +422,14 @@ data:extend({
         production_type = "output",
         pipe_picture = assembler_pictures.assembler2pipepictures,
         pipe_covers = pipecoverspictures(),
-        base_area = 10,
-        base_level = 1,
         pipe_connections = {
           { flow_direction = "output", direction = defines.direction.south, position = { 0, 1 } },
         },
         secondary_draw_orders = { north = -1 },
       },
     },
-    fluid_boxes_off_when_no_fluid_recipe = true,
+    -- Keep the ports while no recipe is set so the machine keeps its direction until one is chosen.
+    fluid_boxes_off_when_no_fluid_recipe = false,
     collision_box = { { -1.2, -1.2 }, { 1.2, 1.2 } },
     selection_box = { { -1.5, -1.5 }, { 1.5, 1.5 } },
     fast_replaceable_group = "assembling-machine",
