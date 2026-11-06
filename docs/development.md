@@ -278,3 +278,25 @@ only their own recipe, keep the caller's fields and leave the full-tier pairs
 unchanged. An invalid direction must fail without registering or replacing any
 recipe. Factorio accepts recipe `surface_conditions` only with space travel
 enabled, so the stone recipe supplies and checks them only in the Space Age run.
+
+## Item colors
+
+`prototypes/y_item_colors.lua` declares each Yuoki item's color for mods that color things by
+item, as the mod-data prototype `yuoki-item-colors` (`data_type = "item-colors"`,
+`data.items[item] = Color`). Factorio items have no color, and mods can't read icon pixels while
+loading, so `tools/item_colors.py` reads them from the icons ahead of time. Regenerate the file
+when an item or its icon changes, from `--dump-data` runs with base only and with Space Age +
+Quality + Recycler + Elevated Rails, so items that exist only with those are included:
+
+```sh
+"$FACTORIO_BIN" -c "$TEST_DIR/config.ini" --mod-directory "$TEST_DIR/mods" --dump-data
+cp "$TEST_DIR/script-output/data-raw-dump.json" base-dump.json
+# Enable the expansion mods in mod-list.json, then dump again.
+"$FACTORIO_BIN" -c "$TEST_DIR/config.ini" --mod-directory "$TEST_DIR/mods" --dump-data
+python3 tools/item_colors.py base-dump.json "$TEST_DIR/script-output/data-raw-dump.json"
+```
+
+An icon's color is the average of its visible pixels without the darkest 30% (outline and
+shading) and the brightest 5% (highlights). Clearly colored icons are then made more saturated
+and at least mid-bright, so a dark brown block still reads as brown; grey and black icons keep
+their color. Check the result against the icons; the dumps stay out of Git.

@@ -70,6 +70,3 @@ data.raw["logistic-container"]["y-rare-m1bunker-log"].logistic_slots_count = 1
 
 -- Factorio Space Age updates
 require("prototypes.integration.space-age._all") -- Space Age stuff
-
--- Color the recipes making Yuoki materials before other mods read them in data-final-fixes.
-require("prototypes.y_item_colors")()
