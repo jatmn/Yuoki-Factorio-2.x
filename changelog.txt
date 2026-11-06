@@ -1,4 +1,8 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.3.3
+  Fixes:
+    - Mods that color things by the item they carry no longer see UC-A2 and the items made from it as yellow, or Orange Stuff, Rich Dust and the parts made from them as blue. The recipes making UC-A2, Transmuted UCA2, Quantrinum, Transmuted Quantrinum, Lachnan Crystal, Ancient Data Fragment, Data Crystal, Orange Stuff, Rich Dust, Dirt, Wet Contaminated Mud, Reputation, M68K Chip and B-YI-MFCB now carry the color of the item's icon as their crafting tint. No Yuoki machine shows recipe tints, so nothing looks different in game.
+---------------------------------------------------------------------------------------------------
 Version: 1.3.2
   Changes:
     - The Cimota Restructor keeps its direction and shows its pipe connections while no recipe is set, so it can be rotated before choosing a recipe and keeps its orientation when an upgrade or blueprint clears a recipe it cannot run.

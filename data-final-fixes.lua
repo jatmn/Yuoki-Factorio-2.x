@@ -13,3 +13,6 @@ require("prototypes.integration.factorio-tiberium._all") -- Integraton - Factori
 
 -- Apply recipe eligibility after integrations have added their recipes and modules.
 require("prototypes.y_prodmod_as_vanilla")
+
+-- Color the integrations' recipes making Yuoki materials too.
+require("prototypes.y_item_colors")()
