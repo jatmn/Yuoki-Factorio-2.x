@@ -10,7 +10,8 @@ any of them is listed. Rerun it when an item or its icon changes.
 An icon's color is the average of its visible pixels, leaving out the darkest 30%
 (outline and shading) and the brightest 5% (highlights). Clearly colored icons are
 then made more saturated and at least mid-bright, so a dark brown block still reads
-as brown; grey and black icons keep their color.
+as brown, and vivid icons take the brightness of their lit faces, so an orange block
+stays orange rather than brown; grey and black icons keep their color.
 """
 import argparse
 import colorsys
@@ -107,9 +108,13 @@ def icon_color(prototype):
     kept = pixels[int(len(pixels) * 0.3):max(int(len(pixels) * 0.95), int(len(pixels) * 0.3) + 1)]
     average = [sum(c[k] for c in kept) / len(kept) for k in range(3)]
     hue, saturation, value = colorsys.rgb_to_hsv(*average)
+    # Vivid icons take the brightness of their lit faces (orange stuff stays orange); muted ones
+    # are lifted to mid-bright only (slag and dirt stay brown).
+    lit = sorted(max(c) for c in pixels)[int(len(pixels) * 0.9)]
+    target = 0.55 + max(0, lit - 0.55) * min(1, max(0, (saturation - 0.45) / 0.2))
     if saturation < 0.5:
         saturation += (0.5 - saturation) * min(1, max(0, (saturation - 0.12) / 0.12))
-    value += max(0, 0.55 - value) * min(1, max(0, (saturation - 0.15) / 0.25))
+    value += max(0, target - value) * min(1, max(0, (saturation - 0.15) / 0.25))
     return colorsys.hsv_to_rgb(hue, saturation, value)
 
 

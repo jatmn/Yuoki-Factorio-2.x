@@ -298,5 +298,6 @@ python3 tools/item_colors.py base-dump.json "$TEST_DIR/script-output/data-raw-du
 
 An icon's color is the average of its visible pixels without the darkest 30% (outline and
 shading) and the brightest 5% (highlights). Clearly colored icons are then made more saturated
-and at least mid-bright, so a dark brown block still reads as brown; grey and black icons keep
-their color. Check the result against the icons; the dumps stay out of Git.
+and at least mid-bright, so a dark brown block still reads as brown, and vivid icons take the
+brightness of their lit faces (the 90th percentile), so an orange block stays orange rather than
+brown; grey and black icons keep their color. Check the result against the icons; the dumps stay out of Git.
