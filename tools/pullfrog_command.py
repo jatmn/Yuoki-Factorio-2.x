@@ -9,7 +9,7 @@ OWNER = 'jatmn'
 OWNER_ID = 12479882
 REPOSITORY = 'jatmn/Yuoki-Factorio-2.x'
 # Matches the action bootstrap in .github/workflows/pullfrog.yml.
-PULLFROG_VERSION = '0.1.97'
+PULLFROG_VERSION = '0.1.122'
 MAX_PAYLOAD_BYTES = 64 * 1024
 
 
