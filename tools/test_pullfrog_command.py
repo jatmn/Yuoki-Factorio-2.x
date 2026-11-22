@@ -5,6 +5,7 @@ from io import BytesIO
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -141,10 +142,20 @@ class AutomaticReviewTests(unittest.TestCase):
     def test_requires_verified_author_on_the_automatic_review_step(self):
         workflow = HELPER.parents[1] / '.github' / 'workflows' / 'pullfrog.yml'
         _, _, automatic = workflow.read_text(encoding='utf-8').partition('\n  auto-review:\n')
-        _, _, step = automatic.partition('\n      - name: Review the pull request\n')
-        self.assertTrue(step, 'Expected the automatic Pullfrog review step')
-        self.assertEqual(step.splitlines()[0].strip(), "if: steps.authorize.outputs.authorized == 'true'")
-        self.assertIn('prompt: ${{ inputs.prompt }}', step)
+        job = re.split(r'^ {2}\S', automatic, maxsplit=1, flags=re.M)[0]
+        self.assertIn("github.repository == 'jatmn/Yuoki-Factorio-2.x' &&", job)
+        steps = re.split(r'^ {6}- ', job, flags=re.M)
+        authorize = next((step for step in steps if step.startswith('name: Verify the pull request author\n')), '')
+        review = next((step for step in steps if step.startswith('name: Review the pull request\n')), '')
+        self.assertTrue(authorize and review, 'Expected authorization and review steps')
+        self.assertLess(steps.index(authorize), steps.index(review))
+        self.assertIn('        id: authorize', authorize.splitlines())
+        self.assertIn('        run: python3 tools/pullfrog_command.py --review', authorize.splitlines())
+        self.assertIn("        if: steps.authorize.outputs.authorized == 'true'", review.splitlines())
+        self.assertRegex(review, r'(?m)^ {8}uses: pullfrog/pullfrog@[0-9a-f]{40}(?: +#.*)?$')
+        _, _, inputs = review.partition('\n        with:\n')
+        inputs = re.split(r'^ {8}\S', inputs, maxsplit=1, flags=re.M)[0]
+        self.assertIn('          prompt: ${{ inputs.prompt }}', inputs.splitlines())
 
     api = ('https://api.github.test', EVENT['repository']['full_name'], 'fixture-token')
     owner = {'login': 'jatmn', 'id': 12479882}
