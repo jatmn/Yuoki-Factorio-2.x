@@ -138,6 +138,14 @@ class OwnerCommandTests(unittest.TestCase):
 
 
 class AutomaticReviewTests(unittest.TestCase):
+    def test_requires_verified_author_on_the_automatic_review_step(self):
+        workflow = HELPER.parents[1] / '.github' / 'workflows' / 'pullfrog.yml'
+        _, _, automatic = workflow.read_text(encoding='utf-8').partition('\n  auto-review:\n')
+        _, _, step = automatic.partition('\n      - name: Review the pull request\n')
+        self.assertTrue(step, 'Expected the automatic Pullfrog review step')
+        self.assertEqual(step.splitlines()[0].strip(), "if: steps.authorize.outputs.authorized == 'true'")
+        self.assertIn('prompt: ${{ inputs.prompt }}', step)
+
     api = ('https://api.github.test', EVENT['repository']['full_name'], 'fixture-token')
     owner = {'login': 'jatmn', 'id': 12479882}
     envelope = {
