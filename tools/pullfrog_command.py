@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Authorize explicit owner comments before exposing credentials to Pullfrog."""
+"""Authorize owner comments and automatic PR review before running Pullfrog."""
+from http.client import IncompleteRead
 import json
 import os
 from pathlib import Path
 import re
+import sys
+from time import sleep
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 OWNER = 'jatmn'
 OWNER_ID = 12479882
@@ -78,5 +83,62 @@ def main():
         output.write(f'payload={json.dumps(payload)}\nauthorized=true\n')
 
 
+def is_authorized_review(payload, api_url, repository, token):
+    """Verify the author from GitHub, independent of the actor who pushed."""
+    if not isinstance(payload, dict) or payload.get('~pullfrog') is not True:
+        return False
+    event = payload.get('event')
+    if not isinstance(event, dict) or event.get('is_pr') is not True:
+        return False
+    if event.get('trigger') not in (
+        'pull_request_opened', 'pull_request_ready_for_review', 'pull_request_synchronize',
+    ):
+        return False
+    number = event.get('issue_number')
+    if type(number) is not int or not 0 < number <= 2**53 - 1:
+        return False
+
+    request = Request(f'{api_url}/repos/{repository}/pulls/{number}', headers={
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/vnd.github+json',
+    })
+    last_error = None
+    for delay in (0, 0.25, 0.75):
+        if delay:
+            sleep(delay)
+        try:
+            with urlopen(request, timeout=10) as response:
+                pr = json.load(response)
+            author = pr.get('user') if isinstance(pr, dict) else None
+            return (isinstance(author, dict)
+                    and author.get('id') == OWNER_ID and author.get('login') == OWNER)
+        except HTTPError as error:
+            last_error = RuntimeError(f'GitHub HTTP {error.code}')
+            retry = (error.code == 408 or error.code >= 500) and not error.headers.get('Retry-After')
+            error.close()
+            if not retry:
+                break
+        except (URLError, TimeoutError, ConnectionError, IncompleteRead) as error:
+            last_error = error
+    raise RuntimeError(f'Could not verify PR #{number} author.') from last_error
+
+
+def review_main():
+    authorized = is_authorized_review(
+        json.loads(os.environ['PULLFROG_PROMPT']),
+        os.environ['GITHUB_API_URL'],
+        os.environ['GITHUB_REPOSITORY'],
+        os.environ['GH_TOKEN'],
+    )
+    if authorized:
+        with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as output:
+            output.write('authorized=true\n')
+    else:
+        print('Skipping automatic review. The dispatch must target an owner-authored PR.')
+
+
 if __name__ == '__main__':
-    main()
+    if sys.argv[1:] == ['--review']:
+        review_main()
+    else:
+        main()
