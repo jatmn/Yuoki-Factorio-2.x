@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """Exercise the actual authorization entrypoint without credentials or model calls."""
 from copy import deepcopy
+from io import BytesIO
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from urllib.error import HTTPError
+
+from pullfrog_command import is_authorized_review
 
 HELPER = Path(__file__).with_name('pullfrog_command.py').resolve()
 EVENT = {
@@ -129,6 +135,96 @@ class OwnerCommandTests(unittest.TestCase):
             result, output, _ = self.run_command(event)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(output, '')
+
+
+
+class AutomaticReviewTests(unittest.TestCase):
+    def test_requires_verified_author_on_the_automatic_review_step(self):
+        workflow = HELPER.parents[1] / '.github' / 'workflows' / 'pullfrog.yml'
+        _, _, automatic = workflow.read_text(encoding='utf-8').partition('\n  auto-review:\n')
+        job = re.split(r'^ {2}\S', automatic, maxsplit=1, flags=re.M)[0]
+        condition = re.search(r'^ {4}if: >-\n((?: {6}\S[^\n]*\n)+)', job, flags=re.M)
+        self.assertIsNotNone(condition, 'Expected the job-level if expression')
+        self.assertIn("      github.repository == 'jatmn/Yuoki-Factorio-2.x' &&", condition[1].splitlines())
+        steps = re.split(r'^ {6}- ', job, flags=re.M)
+        authorize = next((step for step in steps if step.startswith('name: Verify the pull request author\n')), '')
+        review = next((step for step in steps if step.startswith('name: Review the pull request\n')), '')
+        self.assertTrue(authorize and review, 'Expected authorization and review steps')
+        self.assertLess(steps.index(authorize), steps.index(review))
+        self.assertIn('        id: authorize', authorize.splitlines())
+        self.assertIn('        run: python3 tools/pullfrog_command.py --review', authorize.splitlines())
+        self.assertIn("        if: steps.authorize.outputs.authorized == 'true'", review.splitlines())
+        self.assertRegex(review, r'(?m)^ {8}uses: pullfrog/pullfrog@[0-9a-f]{40}(?: +#.*)?$')
+        _, _, inputs = review.partition('\n        with:\n')
+        inputs = re.split(r'^ {8}\S', inputs, maxsplit=1, flags=re.M)[0]
+        self.assertIn('          prompt: ${{ inputs.prompt }}', inputs.splitlines())
+
+    api = ('https://api.github.test', EVENT['repository']['full_name'], 'fixture-token')
+    owner = {'login': 'jatmn', 'id': 12479882}
+    envelope = {
+        '~pullfrog': True,
+        'triggerer': 'different-pusher',
+        'event': {'trigger': 'pull_request_opened', 'is_pr': True, 'issue_number': 7},
+    }
+
+    def response(self, **body):
+        return BytesIO(json.dumps(body).encode())
+
+    def test_reviews_owner_drafts_and_updates_independent_of_pusher(self):
+        for trigger, draft in (
+            ('pull_request_opened', False),
+            ('pull_request_opened', True),
+            ('pull_request_ready_for_review', False),
+            ('pull_request_synchronize', True),
+        ):
+            with self.subTest(trigger=trigger, draft=draft):
+                envelope = deepcopy(self.envelope)
+                envelope['event']['trigger'] = trigger
+                response = self.response(user=self.owner, draft=draft)
+                with patch('pullfrog_command.urlopen', return_value=response) as lookup:
+                    self.assertTrue(is_authorized_review(envelope, *self.api))
+                request = lookup.call_args.args[0]
+                self.assertEqual(request.full_url, f'{self.api[0]}/repos/{self.api[1]}/pulls/7')
+                self.assertEqual(request.get_header('Authorization'), 'Bearer fixture-token')
+                self.assertEqual(lookup.call_args.kwargs['timeout'], 10)
+
+    def test_rejects_other_authors_even_if_owner_pushed(self):
+        envelope = {**self.envelope, 'triggerer': 'jatmn'}
+        for author in (None, {**self.owner, 'id': 100}, {**self.owner, 'login': 'other'}):
+            with self.subTest(author=author):
+                with patch('pullfrog_command.urlopen', return_value=self.response(user=author)):
+                    self.assertFalse(is_authorized_review(envelope, *self.api))
+
+    def test_rejects_invalid_or_non_review_payloads_before_the_lookup(self):
+        with patch('pullfrog_command.urlopen') as lookup:
+            for event in (None, {'trigger': 'issue_comment_created', 'is_pr': True, 'issue_number': 7},
+                          {**self.envelope['event'], 'is_pr': False},
+                          {**self.envelope['event'], 'issue_number': True}):
+                with self.subTest(event=event):
+                    self.assertFalse(is_authorized_review({**self.envelope, 'event': event}, *self.api))
+            lookup.assert_not_called()
+
+    def test_recovers_from_transient_errors_and_stops_on_access_errors(self):
+        def http_error(status):
+            return HTTPError(self.api[0], status, 'fixture error', {}, None)
+
+        with (patch('pullfrog_command.sleep'),
+              patch('pullfrog_command.urlopen', side_effect=[
+                  TimeoutError(), http_error(503), self.response(user=self.owner),
+              ]) as lookup):
+            self.assertTrue(is_authorized_review(self.envelope, *self.api))
+            self.assertEqual(lookup.call_count, 3)
+
+        with patch('pullfrog_command.urlopen', side_effect=http_error(403)) as lookup:
+            with self.assertRaisesRegex(RuntimeError, 'Could not verify PR #7 author'):
+                is_authorized_review(self.envelope, *self.api)
+            self.assertEqual(lookup.call_count, 1)
+
+        with (patch('pullfrog_command.sleep'),
+              patch('pullfrog_command.urlopen', side_effect=TimeoutError()) as lookup):
+            with self.assertRaisesRegex(RuntimeError, 'Could not verify PR #7 author'):
+                is_authorized_review(self.envelope, *self.api)
+            self.assertEqual(lookup.call_count, 3)
 
 
 if __name__ == '__main__':

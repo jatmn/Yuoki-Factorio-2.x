@@ -1,6 +1,6 @@
-# Pullfrog owner commands
+# Pullfrog owner commands and reviews
 
-Pullfrog runs only after **jatmn** creates a new top-level issue or PR comment
+For manual commands, **jatmn** creates a new top-level issue or PR comment
 whose first line begins with `@pullfrog` and a visible instruction:
 
 ```text
@@ -17,10 +17,20 @@ issues and PRs too.
 
 This follows the working setup in
 [yuoki-quinityn](https://github.com/jatmn/yuoki-quinityn/blob/3be55808903e820839cdd515c9ef8c79f036e327/docs/pullfrog.md).
-Opening a PR does not launch Pullfrog. Its agent workflow has no PR, push,
-schedule or `workflow_dispatch` trigger. The separate **CI** dispatcher runs
+The separate **CI** dispatcher runs
 authorization tests in its Python job and workflow validation in its actionlint
 job; these validation jobs never launch the agent.
+
+## Automatic reviews
+
+Pullfrog reviews new PRs, drafts, and updated diffs in this public repository
+when GitHub identifies `jatmn` as the PR author. The person pushing an update
+can be a different account. The GitHub App dispatches the workflow on the
+default branch and the author check must pass before the agent starts.
+In Pullfrog settings, enable PR reviews, draft reviews, and re-reviews on new
+commits, and disable managed mentions and external-contributor reviews.
+Use a fresh owner-authored draft and push an update after the workflow is
+merged to verify live automatic dispatch.
 
 ## Account and repository setup
 
@@ -31,7 +41,7 @@ job; these validation jobs never launch the agent.
    `jatmn` account. No new GitHub provider secret is needed. To reconnect that
    account credential when necessary, use `npx pullfrog auth codex --org jatmn`;
    see [subscription setup](https://docs.pullfrog.com/codex-auth).
-2. Keep managed mentions, automatic reviews/re-reviews, issue processing,
+2. Keep managed mentions, issue processing,
    review responses, CI autofix, labels, automatic approvals and auto-merge off.
    Keep non-collaborator triggers off. Keep pushes and shell access restricted.
 3. Merge the reviewed workflow PR to `main`. If the console still shows
@@ -48,9 +58,9 @@ feature-branch pushes, blocks default-branch/tag pushes and branch deletion,
 and uses restricted shell access. Subscription credentials remain in Pullfrog's
 encrypted store. A matching provider API key stored there can be a fallback
 when subscription quota is exhausted; omit that fallback if API billing is
-unwanted. Native status/verdict checks apply only to explicitly requested PR
-commands, with `review.status-check` and `review.approval-check` enabled in the
-console; they do not turn on automatic reviews or approving reviews.
+unwanted. Native status/verdict checks can apply to PR
+reviews, with `review.status-check` and `review.approval-check` enabled in the
+console. Automatic review settings control whether reviews start or can approve.
 
 ## Maintenance and checks
 
