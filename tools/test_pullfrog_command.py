@@ -143,7 +143,9 @@ class AutomaticReviewTests(unittest.TestCase):
         workflow = HELPER.parents[1] / '.github' / 'workflows' / 'pullfrog.yml'
         _, _, automatic = workflow.read_text(encoding='utf-8').partition('\n  auto-review:\n')
         job = re.split(r'^ {2}\S', automatic, maxsplit=1, flags=re.M)[0]
-        self.assertIn("github.repository == 'jatmn/Yuoki-Factorio-2.x' &&", job)
+        condition = re.search(r'^ {4}if: >-\n((?: {6}\S[^\n]*\n)+)', job, flags=re.M)
+        self.assertIsNotNone(condition, 'Expected the job-level if expression')
+        self.assertIn("      github.repository == 'jatmn/Yuoki-Factorio-2.x' &&", condition[1].splitlines())
         steps = re.split(r'^ {6}- ', job, flags=re.M)
         authorize = next((step for step in steps if step.startswith('name: Verify the pull request author\n')), '')
         review = next((step for step in steps if step.startswith('name: Review the pull request\n')), '')
