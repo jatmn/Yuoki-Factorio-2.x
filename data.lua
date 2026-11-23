@@ -88,3 +88,6 @@ require("prototypes.y_intermediates_list")
 data.raw["character"]["character"].inventory_size = settings.startup["yuoki-inventory-size"].value
 data.raw["character"]["character"].build_distance = settings.startup["yuoki-player-reach"].value
 data.raw["character"]["character"].reach_distance = settings.startup["yuoki-player-reach"].value
+
+-- Each item's color, read from its icon, for mods that color things by item.
+require("prototypes.y_item_colors")
